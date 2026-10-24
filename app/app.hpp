@@ -11,6 +11,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 
 namespace studio {
 
@@ -31,6 +32,7 @@ struct ShownRender {
     bool proxy = false;
     int encodedWidth = 0, encodedHeight = 0;  // size of the image that was encoded
     double encodeMs = 0, decodeMs = 0;
+    bool encodeReused = false;
     glic::Image image;                         // decoded (GLIC pads sides below 64)
     std::shared_ptr<const glic::GlicData> data;
 };
@@ -61,6 +63,18 @@ public:
     void settingsChanged();
     bool& linkChannels() { return linkChannels_; }
 
+    // Decode tab (design §6.4). Linked = decode with the header.
+    bool decodeLinked() const { return decodeLinked_; }
+    void setDecodeLinked(bool linked);
+    glic::EncodeSettings& editDecode() { return decodeSettings_; }
+    bool& decodeChannelsLinked() { return decodeChannelsLinked_; }
+    // The decode-side values the encoder writes for the current settings.
+    glic::EncodeSettings headerSettings() const;
+
+    // Select a settings tab on the next frame ("Encode", "Decode").
+    void selectTab(std::string tab) { selectTab_ = std::move(tab); }
+    std::string takeTabSelection() { return std::exchange(selectTab_, {}); }
+
 private:
     void pumpRender();
     void acceptResult(RenderResult r);
@@ -80,6 +94,9 @@ private:
 
     glic::EncodeSettings settings_;
     bool linkChannels_ = true;
+    bool decodeLinked_ = true;
+    glic::EncodeSettings decodeSettings_;  // decode-side values only (used when unlinked)
+    bool decodeChannelsLinked_ = true;
     int proxyEdge_ = 512;
 
     std::shared_ptr<const glic::Image> source_;
@@ -102,6 +119,7 @@ private:
     bool autoArrange_ = true;
     int framesToRender_ = 3;
     bool quit_ = false;
+    std::string selectTab_;
 };
 
 } // namespace studio

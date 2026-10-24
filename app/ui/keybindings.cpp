@@ -14,6 +14,7 @@ const std::vector<KeyBinding>& keyBindings() {
         {Action::ZoomOut, ImGuiKey_KeypadSubtract, "-", false},
         {Action::ZoomFit, ImGuiKey_0, "0", false},
         {Action::Zoom100, ImGuiKey_1, "1", false},
+        {Action::ToggleDecodeLink, ImGuiKey_L, "L", false},
     };
     return table;
 }

@@ -152,3 +152,46 @@ TEST_CASE("params: reset, copy to all, link") {
     CHECK(studio::waveletChoices()[67].label == "Haar");
     CHECK(studio::log2Floor(1 << 20) == 20);
 }
+
+TEST_CASE("worker reuses the encoded data when only decode settings change") {
+    auto img = glic::loadImage(std::string(GLIC_SOURCE_DIR) + "/tests/images/small64.png");
+    REQUIRE(img);
+    auto source = std::make_shared<const glic::Image>(*img);
+    studio::RenderWorker worker;
+    auto waitOne = [&] {
+        for (int i = 0; i < 2000; i++) {
+            auto r = worker.poll();
+            if (!r.empty()) return r.back();
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        }
+        return studio::RenderResult{};
+    };
+
+    studio::RenderRequest req;
+    req.generation = 1;
+    req.source = source;
+    for (auto& ch : req.encode.channels) ch.wavelet = 67;
+    worker.submit(req);
+    auto first = waitOne();
+    REQUIRE(first.ok);
+    CHECK_FALSE(first.encodeReused);
+
+    req.generation = 2;
+    auto params = glic::decodeParamsFor(req.encode);
+    params.channels[0].prediction = static_cast<int>(glic::Prediction::DC);
+    req.decode.override = params;
+    worker.submit(req);
+    auto second = waitOne();
+    REQUIRE(second.ok);
+    CHECK(second.encodeReused);
+    CHECK(second.data == first.data);  // the very same encoded buffer
+    CHECK(second.image.pixels == glic::decode(*first.data, req.decode).image.pixels);
+    CHECK(second.image.pixels != first.image.pixels);
+
+    req.generation = 3;
+    req.encode.channels[1].quantization = 50;  // an encode change encodes again
+    worker.submit(req);
+    auto third = waitOne();
+    REQUIRE(third.ok);
+    CHECK_FALSE(third.encodeReused);
+}

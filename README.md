@@ -1,8 +1,8 @@
 # glic-studio
 
 A native Wayland editor for GLIC (GLitch Image Codec), built around exploring the codec's
-internals. **Status: M1 (core loop) done.** That's `libglic`, the `glic` CLI, and the GUI with a
-live preview, view modes and PNG export. See `docs/design.md` for the roadmap.
+internals. **Status: M2 (encode/decode split) done.** That's `libglic`, the `glic` CLI, and the GUI with a
+live preview, view modes, PNG export and mismatched decoding. See `docs/design.md` for the roadmap.
 
 `libglic` is a C++ port of the original [GLIC](https://github.com/GlitchCodec/GLIC) (Java/Processing).
 It is byte-identical to GLIC on 220 golden outputs, which are produced by running the
@@ -32,11 +32,13 @@ build/rel/app/glic-studio [image]
 | Ctrl+S | Export PNG |
 | Ctrl+C | Copy the render to the clipboard |
 | Tab | Cycle view: glitched, original, split, difference |
+| L | Toggle decode linked/unlinked (mismatched decoding, Decode tab) |
 | Space (hold) | Show the original; Space+drag pans |
 | wheel, `+`/`-`, `0`, `1` | Zoom, fit, 100%; middle-drag pans |
 
 Each change shows a fast preview first (512 px longest edge, adjustable under Preview). The
-full-resolution render follows once input has been quiet for 150 ms. The app ID is `glic-studio`,
+full-resolution render follows once input has been quiet for 150 ms. Decode-only changes reuse
+the cached encoded data and only decode again. The app ID is `glic-studio`,
 for compositor window rules. `tools/gui_smoke.sh` opens test images in each view mode and saves
 screenshots. It needs a running session.
 

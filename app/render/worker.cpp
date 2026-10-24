@@ -77,15 +77,25 @@ void RenderWorker::run() {
         } else {
             res.sourceWidth = input->width;
             res.sourceHeight = input->height;
-            auto t0 = std::chrono::steady_clock::now();
-            auto enc = glic::encode(*input, req.encode, &hooks);
-            res.encodeMs = msSince(t0);
-            if (enc.cancelled) {
-                cancelled = true;
-            } else if (!enc.ok) {
-                res.error = enc.error;
+            EncodeCache& cache = cache_[req.proxy ? 1 : 0];
+            std::shared_ptr<const glic::GlicData> data;
+            if (cache.data && cache.input == input && cache.settings == req.encode) {
+                data = cache.data;
+                res.encodeReused = true;
             } else {
-                auto data = std::make_shared<const glic::GlicData>(std::move(enc.data));
+                auto t0 = std::chrono::steady_clock::now();
+                auto enc = glic::encode(*input, req.encode, &hooks);
+                res.encodeMs = msSince(t0);
+                if (enc.cancelled) {
+                    cancelled = true;
+                } else if (!enc.ok) {
+                    res.error = enc.error;
+                } else {
+                    data = std::make_shared<const glic::GlicData>(std::move(enc.data));
+                    cache = {input, req.encode, data};
+                }
+            }
+            if (data) {
                 auto t1 = std::chrono::steady_clock::now();
                 auto dec = glic::decode(*data, req.decode, &hooks);
                 res.decodeMs = msSince(t1);

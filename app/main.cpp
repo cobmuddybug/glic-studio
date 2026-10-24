@@ -22,7 +22,9 @@ namespace {
 struct Options {
     std::string open;
     std::string spec;
+    std::string decode;  // unlink decoding and apply these decode-side values
     std::string view;
+    std::string tab;
     std::string capture;  // write a screenshot once a full render is shown, then exit
     int width = 0, height = 0;
 };
@@ -32,7 +34,9 @@ void usage() {
         "glic-studio [image]\n"
         "  --open FILE        open an image at start\n"
         "  --spec \"k=v ...\"   initial encode settings (same keys as `glic encode --spec`)\n"
+        "  --decode \"k=v ...\" unlink decoding and set these decode-side values\n"
         "  --view MODE        glitched | original | split | difference\n"
+        "  --tab NAME         settings tab to show: encode | decode\n"
         "  --size WxH         initial window size in points\n"
         "  --capture OUT.png  screenshot the window once a full render is on screen, then exit");
 }
@@ -48,7 +52,9 @@ bool parse(int argc, char** argv, Options& o) {
         std::string v;
         if (a == "--open") { if (!next(o.open)) return false; }
         else if (a == "--spec") { if (!next(o.spec)) return false; }
+        else if (a == "--decode") { if (!next(o.decode)) return false; }
         else if (a == "--view") { if (!next(o.view)) return false; }
+        else if (a == "--tab") { if (!next(o.tab)) return false; }
         else if (a == "--capture") { if (!next(o.capture)) return false; }
         else if (a == "--size") {
             if (!next(v) || std::sscanf(v.c_str(), "%dx%d", &o.width, &o.height) != 2) return false;
@@ -129,6 +135,16 @@ int main(int argc, char** argv) {
             }
             app.setSettings(s);
         }
+        if (!opt.decode.empty()) {
+            app.setDecodeLinked(false);
+            if (auto err = glic::applySpec(app.editDecode(), opt.decode); !err.empty()) {
+                std::fprintf(stderr, "--decode: %s\n", err.c_str());
+                return 1;
+            }
+            app.decodeChannelsLinked() = false;
+            app.settingsChanged();
+        }
+        if (opt.tab == "decode") app.selectTab("Decode");
         if (opt.view == "original") app.view().mode = studio::ViewMode::Original;
         else if (opt.view == "split") app.view().mode = studio::ViewMode::Split;
         else if (opt.view == "difference") app.view().mode = studio::ViewMode::Difference;

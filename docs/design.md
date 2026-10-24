@@ -373,3 +373,15 @@ Per §11, where the code disagreed with the plan, the code won:
   the window once the full render is on screen, then exits. `tools/gui_smoke.sh` uses it.
 - Only the Encode tab exists so far. Decode, Corrupt and Effects arrive with their milestones
   rather than as empty tabs.
+
+### Recorded during M2
+
+- **Decode tab**: "Linked to encode" decodes with the header. Unlinking starts from exactly the
+  header's values, so the image doesn't change until you edit something. Unlinked decoding is
+  GLIC's skip-header mode. The decode prediction list offers only concrete predictors, because
+  GLIC turns meta predictors into NONE at decode. "Reset to encoded value" replaces "Reset to
+  default" for decode controls. While linked, the tab shows the header values read-only,
+  including resolved random wavelets.
+- **Reuse**: the render worker caches the last encode, for proxy and full size separately, keyed
+  on (source, encode settings). Decode-only changes skip encoding, and the status bar says
+  "decode only". This is unit-tested.

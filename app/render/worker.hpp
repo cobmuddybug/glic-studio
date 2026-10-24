@@ -39,6 +39,7 @@ struct RenderResult {
     glic::Image image;             // decoded, at proxy or full size (GLIC pads sides < 64)
     int sourceWidth = 0, sourceHeight = 0;  // size of the image that was encoded
     double encodeMs = 0, decodeMs = 0;
+    bool encodeReused = false;  // decode-only change: the cached GlicData was decoded again
     std::shared_ptr<const glic::GlicData> data;
 };
 
@@ -77,6 +78,15 @@ private:
     int proxyEdgeKey_ = 0;
     std::shared_ptr<const glic::Image> proxyImage_;
     std::shared_ptr<const glic::Image> proxySourceHold_;
+
+    // Last encode, for proxy and full size separately: a request whose encode
+    // inputs match decodes the cached data instead of encoding again (§4.3).
+    struct EncodeCache {
+        std::shared_ptr<const glic::Image> input;
+        glic::EncodeSettings settings;
+        std::shared_ptr<const glic::GlicData> data;
+    };
+    EncodeCache cache_[2];  // [0] full, [1] proxy
 
     std::thread thread_;
 };

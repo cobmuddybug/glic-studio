@@ -39,6 +39,16 @@ const std::vector<Choice>& predictionChoices() {
     return v;
 }
 
+const std::vector<Choice>& decodePredictionChoices() {
+    static const auto v = [] {
+        std::vector<Choice> out;
+        for (int i = 0; i < glic::kPredictionCount; i++)
+            out.push_back({i, std::string(glic::predictionName(static_cast<glic::Prediction>(i)))});
+        return out;
+    }();
+    return v;
+}
+
 const std::vector<Choice>& waveletChoices() {
     static const auto v = [] {
         std::vector<Choice> out;
@@ -80,6 +90,18 @@ int log2Floor(int v) {
 
 void resetParam(glic::EncodeSettings& s, int channel, ChannelParam p) {
     copyParam(s.channels[channel], glic::ChannelSettings{}, p);
+}
+
+void copyParamFrom(glic::EncodeSettings& dst, const glic::EncodeSettings& src, int channel, ChannelParam p) {
+    copyParam(dst.channels[channel], src.channels[channel], p);
+}
+
+const std::vector<ChannelParam>& decodeParams() {
+    static const std::vector<ChannelParam> v = {ChannelParam::Prediction, ChannelParam::Quantization,
+                                                ChannelParam::Clamp,      ChannelParam::Wavelet,
+                                                ChannelParam::TransformType, ChannelParam::Scale,
+                                                ChannelParam::Encoding};
+    return v;
 }
 
 void copyToAllChannels(glic::EncodeSettings& s, int channel, ChannelParam p) {

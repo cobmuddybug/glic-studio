@@ -1,6 +1,7 @@
 #include "app.hpp"
 
 #include "model/params.hpp"
+#include "spec.hpp"
 #include "render/resize.hpp"
 #include "ui/canvas.hpp"
 #include "ui/keybindings.hpp"
@@ -103,6 +104,33 @@ void App::settingsChanged() {
     scheduler_.changed(nowMs(), fits);
 }
 
+glic::EncodeSettings App::headerSettings() const {
+    // What decodeParamsFor() would write, except that random choices are only
+    // known after encoding: take those from the latest encoded header.
+    glic::DecodeParams params = glic::decodeParamsFor(settings_);
+    bool random = false;
+    for (const auto& ch : settings_.channels)
+        random |= ch.wavelet == glic::kWaveletRandom || ch.transformType == glic::TransformType::RANDOM;
+    if (random && shown_.data) params = shown_.data->layout().params;
+    glic::EncodeSettings s = glic::settingsFromHeader(params);
+    s.seed = settings_.seed;
+    return s;
+}
+
+void App::setDecodeLinked(bool linked) {
+    if (linked == decodeLinked_) return;
+    decodeLinked_ = linked;
+    if (!linked) {
+        // Start from exactly what linked decoding uses, so unlinking alone changes nothing.
+        decodeSettings_ = headerSettings();
+        decodeChannelsLinked_ = channelsIdentical(decodeSettings_);
+        setStatus("Decode unlinked: mismatched decoding");
+    } else {
+        setStatus("Decode linked to encode");
+    }
+    settingsChanged();
+}
+
 void App::pumpRender() {
     for (auto& r : worker_.poll()) {
         const bool show = scheduler_.finished(r.generation, r.cancelled);
@@ -120,6 +148,8 @@ void App::pumpRender() {
         req.generation = job->ticket;
         req.source = source_;
         req.encode = settings_;
+        req.decode.seed = settings_.seed;
+        if (!decodeLinked_) req.decode.override = glic::paramsFromSettings(decodeSettings_);
         req.proxy = job->proxy;
         req.proxyEdge = proxyEdge_;
         worker_.submit(std::move(req));
@@ -133,6 +163,7 @@ void App::acceptResult(RenderResult r) {
     shown_.encodedHeight = r.sourceHeight;
     shown_.encodeMs = r.encodeMs;
     shown_.decodeMs = r.decodeMs;
+    shown_.encodeReused = r.encodeReused;
     shown_.image = std::move(r.image);
     shown_.data = std::move(r.data);
     glitchedTex_.upload(shown_.image);
@@ -184,6 +215,7 @@ void App::runAction(int a) {
     case Action::ZoomOut: zoomBy(view_, 0.8f); break;
     case Action::ZoomFit: view_.fit = true; break;
     case Action::Zoom100: zoomTo100(view_, fb); break;
+    case Action::ToggleDecodeLink: setDecodeLinked(!decodeLinked_); break;
     }
 }
 
@@ -246,6 +278,12 @@ void App::menuBar() {
         ImGui::MenuItem("Rearrange for window shape", nullptr, &autoArrange_);
         ImGui::EndMenu();
     }
+    if (ImGui::BeginMenu("Decode")) {
+        bool linked = decodeLinked_;
+        if (ImGui::MenuItem("Linked to encode", shortcutLabel(Action::ToggleDecodeLink), &linked)) setDecodeLinked(linked);
+        ImGui::TextDisabled("Unlinked = mismatched decoding (Decode tab)");
+        ImGui::EndMenu();
+    }
     if (ImGui::BeginMenu("Preview")) {
         ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
         if (ImGui::SliderInt("Proxy size", &proxyEdge_, 128, 2048, "%d px")) settingsChanged();
@@ -270,8 +308,11 @@ void App::statusBar(float height) {
     if (source_) {
         char buf[256];
         if (shown_.valid) {
-            std::snprintf(buf, sizeof buf, "%.0f ms (enc %.0f + dec %.0f)  \xC2\xB7  ", shown_.encodeMs + shown_.decodeMs,
-                          shown_.encodeMs, shown_.decodeMs);
+            if (shown_.encodeReused)
+                std::snprintf(buf, sizeof buf, "%.0f ms (decode only)  \xC2\xB7  ", shown_.decodeMs);
+            else
+                std::snprintf(buf, sizeof buf, "%.0f ms (enc %.0f + dec %.0f)  \xC2\xB7  ",
+                              shown_.encodeMs + shown_.decodeMs, shown_.encodeMs, shown_.decodeMs);
             text += buf;
         }
         std::snprintf(buf, sizeof buf, "%d\xC3\x97%d", source_->width, source_->height);
@@ -286,6 +327,13 @@ void App::statusBar(float height) {
         else text += shown_.valid ? (shown_.proxy ? "proxy" : "full") : "-";
     } else {
         text = "No image";
+    }
+    if (!decodeLinked_) {
+        ImGui::TextColored(ImVec4(0.95f, 0.7f, 0.3f, 1), "mismatch");
+        ImGui::SetItemTooltip("Decode is unlinked from encode (L to relink)");
+        ImGui::SameLine();
+        ImGui::TextDisabled("\xC2\xB7");
+        ImGui::SameLine();
     }
     ImGui::TextUnformatted(text.c_str());
     if (!status_.empty()) {
