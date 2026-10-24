@@ -1,54 +1,64 @@
 #pragma once
 
+// Reimplementation of the bit-io 1.3.7 behaviour GLIC relies on (the library
+// itself is Apache-2.0; no code is copied). MSB-first; signed values are two's
+// complement in `size` bits; `unsigned` reads zero-extend.
+
 #include <cstdint>
 #include <vector>
-#include <cstddef>
 
 namespace glic {
 
-class BitWriter {
+// bit-io's IllegalArgumentException for an invalid size (GLIC lets it escape).
+struct BitSizeError {};
+// ArrayByteInput's IllegalStateException when reading past the limit.
+struct BitInputExhausted {};
+
+class BitOutput {
 public:
-    BitWriter() : buffer_(), bitPos_(0), currentByte_(0) {}
+    explicit BitOutput(std::vector<uint8_t>& sink) : out_(sink) {}
 
-    void writeBit(bool bit);
-    void writeBits(uint32_t value, int numBits);
-    void writeBoolean(bool value);
-    void writeInt(int32_t value, bool isSigned, int numBits);
-    void writeByte(uint8_t value);
-    void writeBytes(const uint8_t* data, size_t size);
-
-    void align();
-    const std::vector<uint8_t>& data() const { return buffer_; }
-    size_t size() const { return buffer_.size(); }
-    void clear();
+    void writeBoolean(bool v) { writeInt(true, 1, v ? 1 : 0); }
+    void writeInt(bool isUnsigned, int size, int value);
+    // align(bytes): pad to a multiple of `bytes` octets counted from this writer's start.
+    void align(int bytes);
 
 private:
-    std::vector<uint8_t> buffer_;
-    int bitPos_;
-    uint8_t currentByte_;
+    void unsigned8(int size, int value);
+    void unsigned16(int size, int value);
+    void octet(int value) {
+        out_.push_back(static_cast<uint8_t>(value & 0xFF));
+        count_++;
+    }
+
+    std::vector<uint8_t>& out_;
+    bool flags_[8] = {};
+    int index_ = 0;
+    int64_t count_ = 0;
 };
 
-class BitReader {
+class BitInput {
 public:
-    BitReader(const uint8_t* data, size_t size)
-        : data_(data), size_(size), bytePos_(0), bitPos_(0) {}
+    BitInput(const uint8_t* data, size_t limit) : data_(data), limit_(limit) {}
 
-    bool readBit();
-    uint32_t readBits(int numBits);
-    bool readBoolean();
-    int32_t readInt(bool isSigned, int numBits);
-    uint8_t readByte();
-    void readBytes(uint8_t* buffer, size_t count);
-
-    void align();
-    bool eof() const { return bytePos_ >= size_ && bitPos_ == 0; }
-    size_t bytesRemaining() const;
+    bool readBoolean() { return readInt(true, 1) == 1; }
+    int readInt(bool isUnsigned, int size);
 
 private:
+    int unsigned8(int size);
+    int unsigned16(int size);
+    int octet() {
+        if (pos_ >= limit_) throw BitInputExhausted{};
+        count_++;
+        return data_[pos_++];
+    }
+
     const uint8_t* data_;
-    size_t size_;
-    size_t bytePos_;
-    int bitPos_;
+    size_t limit_;
+    size_t pos_ = 0;
+    bool flags_[8] = {};
+    int index_ = 8;
+    int64_t count_ = 0;
 };
 
 } // namespace glic

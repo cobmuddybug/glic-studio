@@ -15,7 +15,7 @@ add_executable(glic_tests
     test_golden.cpp
     test_libglic.cpp
 )
-target_link_libraries(glic_tests PRIVATE glic::glic glic_cli_args doctest::doctest)
+target_link_libraries(glic_tests PRIVATE glic::glic glic_cli_spec doctest::doctest)
 target_compile_definitions(glic_tests PRIVATE
     GLIC_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
     GLIC_BASELINE_DIR="${BASELINE_OUT}"
@@ -32,8 +32,8 @@ set_tests_properties(baseline_unpack PROPERTIES FIXTURES_SETUP baseline)
 add_test(NAME libglic COMMAND glic_tests)
 set_tests_properties(libglic PROPERTIES FIXTURES_REQUIRED baseline)
 
-# End to end: the CLI binary regenerates the upstream baseline byte-for-byte.
-add_test(NAME cli_baseline
-    COMMAND ${PROJECT_SOURCE_DIR}/tools/check_baseline.sh $<TARGET_FILE:glic-cli> tests/baseline)
-add_test(NAME cli_provisional
-    COMMAND ${PROJECT_SOURCE_DIR}/tools/check_baseline.sh $<TARGET_FILE:glic-cli> tests/golden-provisional)
+
+# End to end through the CLI: encode a few baseline cases and compare bytes.
+add_test(NAME cli_golden
+    COMMAND ${PROJECT_SOURCE_DIR}/tools/check_cli.sh $<TARGET_FILE:glic-cli> ${BASELINE_OUT})
+set_tests_properties(cli_golden PROPERTIES FIXTURES_REQUIRED baseline)

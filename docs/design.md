@@ -323,3 +323,36 @@ If GLIC itself is too slow for these targets, profile first. Parallelize per cha
 - **Never change libglic's output** without a golden-test update that the project owner has explicitly approved.
 - When glic-cpp's actual structure conflicts with this document, the code is right. Update this document and note the change.
 - Keep the UI restrained. If a feature seems to need a new panel, first consider whether it fits as a tab, toggle or popup.
+
+---
+
+## 12. Changes from this document (recorded during M0, 2026-10-25)
+
+Per §11, where the code disagreed with the plan, the code won:
+
+- **Base codec.** §0 and §4.1 assumed `glic-cpp` would be refactored into libglic. It was
+  (commit `735d39e`, byte-identical to upstream), but upstream turned out to be broken: crashes
+  on REF/SAD/BSAD/RANDOM, inverted signs in its bit reader, a literal scale of 20, and
+  non-invertible wavelets. Its default output is near-flat grey. With the project owner's agreement,
+  libglic is instead a **direct port of the original Java GLIC**, verified byte-for-byte against
+  GLIC run headless (`tools/java-harness`). glic-cpp's extra predictors, encodings and post
+  effects are not part of GLIC and are gone. That answers §10's post-effects question for now:
+  pure GLIC.
+- **Baselines** (§0.2) come from the original GLIC, not glic-cpp: 134 cases × up to 6 images.
+  Test images: photo (public-domain NPS, 384 px), flat, gradient, high-contrast, 64×64, and a
+  37×23 image below GLIC's 64 px decode minimum.
+- **File format** is GLIC's own `.glic` (header + marks + 512-byte separators), not glic-cpp's.
+- **Parameters** (§5.1 placeholders) are GLIC's: colour space, border, and per channel min/max
+  block, threshold, prediction (incl. SAD/BSAD/RANDOM), quantization, clamp, wavelet (67 JWave
+  filters), transform type (FWT/WPT), compression, scale, encoding (raw/packed/rle). Decode-side
+  values are prediction, quantization, clamp, wavelet, transform type, scale, encoding, colour
+  space and border. Mismatch decoding is GLIC's own "skip header" mode.
+- **Determinism** (§5.2): GLIC draws everything from Processing's `random()`. libglic reproduces
+  `java.util.Random` exactly and seeds it per call from the preset's seed, so the GUI, the CLI
+  and GLIC itself all agree.
+- **API** (§4.1): `glic::encode` returns `EncodeResult` and `glic::decode` returns
+  `DecodeResult` (both carry ok/cancelled/error), because failures and cancellation are
+  first-class. `GlicData` is the exact `.glic` byte buffer, and `layout()` describes its
+  sections for the corruption lab.
+- **Platform**: development happens on Omarchy/Hyprland. Nothing is distro-specific, but niri
+  and Fedora are untested until someone runs them.

@@ -70,6 +70,11 @@ def small(x, y):
     return ((x * 37) % 256, (y * 53) % 256, ((x ^ y) * 11) % 256)
 
 
+def tiny(x, y):
+    # 37x23: odd, non-power-of-two, smaller than GLIC's 64px decode minimum.
+    return ((x * 7) % 256, (y * 11) % 256, 255 if (x + y) % 5 == 0 else 40)
+
+
 def main():
     out = Path(sys.argv[1] if len(sys.argv) > 1 else "tests/images")
     out.mkdir(parents=True, exist_ok=True)
@@ -77,6 +82,7 @@ def main():
     write_png(out / "gradient.png", 512, 256, gradient)
     write_png(out / "contrast.png", 300, 300, contrast)
     write_png(out / "small64.png", 64, 64, small)
+    write_png(out / "tiny.png", 37, 23, tiny)
 
 
 if __name__ == "__main__":

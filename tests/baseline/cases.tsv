@@ -1,43 +1,141 @@
-# Baseline case matrix for unmodified glic-cpp (third_party/glic-cpp-upstream).
-# Columns (tab-separated): name  images  encode-args  decode-args
-#   images: "all" or a comma-separated list of tests/images/*.png stems
-#   "-" means no extra args.
-# REF, SAD, BSAD and RANDOM are absent on purpose: upstream crashes on them
-# (see docs/glic-internals.md, "Upstream defects").
-default	all	-	-
-spiral_haar	all	--prediction SPIRAL --quantization 180 --wavelet HAAR	-
-angle_lab	all	--prediction ANGLE --colorspace LAB	-
-mod256_rle	all	--wavelet NONE --clamp mod256 --encoding rle	-
-nowavelet_9bit	all	--wavelet NONE --prediction DIFF --colorspace OHTA	-
-wpt_db4	all	--transform wpt --wavelet DB4 --scale 40 --colorspace YUV	-
-delta_coif	all	--encoding delta --wavelet COIF2 --prediction GRADIENT	-
-xor_ycbcr	all	--encoding xor --colorspace YCbCr --min-block 4 --max-block 64 --threshold 5 --prediction JPEGLS	-
-zigzag_sym4	all	--encoding zigzag --wavelet SYM4 --prediction WAVE --colorspace HSB	-
-rggbg_border	all	--colorspace R-GGB-G --prediction EDGE --border 255,0,128 --quantization 30	-
-gs_radial	all	--colorspace GS --prediction RADIAL --threshold 40	-
-raw_rgb	small64,contrast	--prediction NONE --wavelet NONE --quantization 0 --encoding raw --colorspace RGB	-
-minblock1	small64,flat	--min-block 1 --max-block 512 --threshold 2	-
-fx_upper	all	-	--effect SCANLINE --effect CHROMATIC_ABERRATION --effect GLITCH --effect DITHER --effect POSTERIZE --effect-blocksize 4 --effect PIXELATE
-fx_lower_noop	small64	-	--effect scanline --effect chromatic
-pred_corner	small64	--prediction CORNER	-
-pred_h	small64	--prediction H	-
-pred_v	small64	--prediction V	-
-pred_dc	small64	--prediction DC	-
-pred_dcmedian	small64	--prediction DCMEDIAN	-
-pred_median	small64	--prediction MEDIAN	-
-pred_avg	small64	--prediction AVG	-
-pred_truemotion	small64	--prediction TRUEMOTION	-
-pred_ldiag	small64	--prediction LDIAG	-
-pred_hv	small64	--prediction HV	-
-pred_none	small64	--prediction NONE	-
-pred_noise	small64	--prediction NOISE	-
-pred_mirror	small64	--prediction MIRROR	-
-pred_checkerboard	small64	--prediction CHECKERBOARD	-
-cs_rgb	small64	--colorspace RGB	-
-cs_cmy	small64	--colorspace CMY	-
-cs_xyz	small64	--colorspace XYZ	-
-cs_yxy	small64	--colorspace YXY	-
-cs_hcl	small64	--colorspace HCL	-
-cs_luv	small64	--colorspace LUV	-
-cs_ypbpr	small64	--colorspace YPbPr	-
-cs_ydbdr	small64	--colorspace YDbDr	-
+# Ground truth from the ORIGINAL GLIC (third_party/GLIC), run headless on
+# Processing 3.5.4 / Java 8u202 by tools/java-harness. Regenerate with
+# tools/make_baseline.sh. Columns (tab-separated):
+#   name  images  seed  encode-spec  decode-spec
+# Specs start from GLIC's CodecConfig defaults (see glic-cli/spec.hpp).
+# decode-spec "-" = decode with the header; otherwise GLIC's skip-header mode
+# decodes with encode-spec + decode-spec.
+javadefault	all	1	-	-
+guidefault	all	1	colorspace=1 min=4 pred=7 quant=0 wavelet=0 scale=1048576 enc=1	-
+haar_sad	all	2	scale=1048576 enc=1 pred=-1 quant=40 wavelet=67	-
+bsad_ycbcr_rle	all	3	colorspace=12 pred=-2 wavelet=46 scale=65536 enc=2	-
+random_pred	all	4	pred=-3 wavelet=0 enc=1 colorspace=0	-
+ref	photo,small64,tiny	5	pred=14 wavelet=0 enc=1 quant=20	-
+angle_lab	photo,small64	6	pred=15 wavelet=67 scale=262144 enc=1 colorspace=8	-
+wpt_db4_yuv	all	7	ttype=1 wavelet=46 scale=1048576 enc=1 colorspace=15	-
+rle_mod256	all	8	wavelet=0 clamp=1 enc=2 quant=60 pred=9	-
+raw_none	small64,contrast,tiny	9	wavelet=0 pred=0 quant=0 enc=0 colorspace=1	-
+compress_db10	all	10	wavelet=52 compress=120 scale=1048576 enc=1	-
+lowscale_sym10	all	11	wavelet=30 scale=4 enc=1	-
+random_wavelet	all	12	wavelet=-1 ttype=-1 scale=1048576 enc=1	-
+perchannel	all	13	pred=9,15,-1 wavelet=67,0,46 quant=0,40,90 enc=1,2,0 clamp=0,1,0 min=2,4,8 max=256,64,512 thr=15,40,5 scale=1048576,65536,4096	-
+border_rggbg	photo,tiny	14	border=255,0,128 colorspace=10 pred=13 wavelet=0 enc=1	-
+min1	small64,flat	15	min=1 max=512 thr=2 wavelet=67 scale=1048576 enc=1	-
+quant300	small64	16	quant=300 enc=1 wavelet=0	-
+seed99	small64,photo	99	scale=1048576 enc=1 pred=-1 quant=40 wavelet=67	-
+badscale	small64	17	wavelet=67 scale=0 enc=1	-
+mm_pred	all	18	pred=9 wavelet=67 scale=1048576 enc=1	pred=4
+mm_colorspace	photo,flat	19	colorspace=9 enc=1 wavelet=0 quant=0	colorspace=8
+mm_wavelet	photo,gradient	20	wavelet=67 scale=1048576 enc=1	wavelet=46
+mm_scale	photo	21	wavelet=67 scale=1048576 enc=1	scale=65536
+mm_encoding	photo	22	wavelet=67 scale=1048576 enc=1	enc=2
+mm_quant	photo	23	wavelet=0 quant=40 enc=1	quant=120
+mm_random_wavelet	photo	24	wavelet=67 scale=1048576 enc=1	wavelet=-1
+mm_meta_pred	photo	25	pred=-1 wavelet=0 enc=1	pred=-1
+mm_clamp_border	photo	26	wavelet=0 enc=1 quant=30	clamp=1 border=0,255,0
+cs00	small64,gradient	30	colorspace=0 pred=7 wavelet=0 enc=1 quant=0	-
+cs01	small64,gradient	31	colorspace=1 pred=7 wavelet=0 enc=1 quant=0	-
+cs02	small64,gradient	32	colorspace=2 pred=7 wavelet=0 enc=1 quant=0	-
+cs03	small64,gradient	33	colorspace=3 pred=7 wavelet=0 enc=1 quant=0	-
+cs04	small64,gradient	34	colorspace=4 pred=7 wavelet=0 enc=1 quant=0	-
+cs05	small64,gradient	35	colorspace=5 pred=7 wavelet=0 enc=1 quant=0	-
+cs06	small64,gradient	36	colorspace=6 pred=7 wavelet=0 enc=1 quant=0	-
+cs07	small64,gradient	37	colorspace=7 pred=7 wavelet=0 enc=1 quant=0	-
+cs08	small64,gradient	38	colorspace=8 pred=7 wavelet=0 enc=1 quant=0	-
+cs09	small64,gradient	39	colorspace=9 pred=7 wavelet=0 enc=1 quant=0	-
+cs10	small64,gradient	40	colorspace=10 pred=7 wavelet=0 enc=1 quant=0	-
+cs11	small64,gradient	41	colorspace=11 pred=7 wavelet=0 enc=1 quant=0	-
+cs12	small64,gradient	42	colorspace=12 pred=7 wavelet=0 enc=1 quant=0	-
+cs13	small64,gradient	43	colorspace=13 pred=7 wavelet=0 enc=1 quant=0	-
+cs14	small64,gradient	44	colorspace=14 pred=7 wavelet=0 enc=1 quant=0	-
+cs15	small64,gradient	45	colorspace=15 pred=7 wavelet=0 enc=1 quant=0	-
+pred00	small64	50	pred=0 wavelet=67 scale=1048576 enc=1 quant=30	-
+pred01	small64	51	pred=1 wavelet=67 scale=1048576 enc=1 quant=30	-
+pred02	small64	52	pred=2 wavelet=67 scale=1048576 enc=1 quant=30	-
+pred03	small64	53	pred=3 wavelet=67 scale=1048576 enc=1 quant=30	-
+pred04	small64	54	pred=4 wavelet=67 scale=1048576 enc=1 quant=30	-
+pred05	small64	55	pred=5 wavelet=67 scale=1048576 enc=1 quant=30	-
+pred06	small64	56	pred=6 wavelet=67 scale=1048576 enc=1 quant=30	-
+pred07	small64	57	pred=7 wavelet=67 scale=1048576 enc=1 quant=30	-
+pred08	small64	58	pred=8 wavelet=67 scale=1048576 enc=1 quant=30	-
+pred09	small64	59	pred=9 wavelet=67 scale=1048576 enc=1 quant=30	-
+pred10	small64	60	pred=10 wavelet=67 scale=1048576 enc=1 quant=30	-
+pred11	small64	61	pred=11 wavelet=67 scale=1048576 enc=1 quant=30	-
+pred12	small64	62	pred=12 wavelet=67 scale=1048576 enc=1 quant=30	-
+pred13	small64	63	pred=13 wavelet=67 scale=1048576 enc=1 quant=30	-
+pred14	small64	64	pred=14 wavelet=67 scale=1048576 enc=1 quant=30	-
+pred15	small64	65	pred=15 wavelet=67 scale=1048576 enc=1 quant=30	-
+wavelet01	small64	101	wavelet=1 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet02	small64	102	wavelet=2 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet03	small64	103	wavelet=3 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet04	small64	104	wavelet=4 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet05	small64	105	wavelet=5 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet06	small64	106	wavelet=6 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet07	small64	107	wavelet=7 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet08	small64	108	wavelet=8 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet09	small64	109	wavelet=9 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet10	small64	110	wavelet=10 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet11	small64	111	wavelet=11 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet12	small64	112	wavelet=12 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet13	small64	113	wavelet=13 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet14	small64	114	wavelet=14 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet15	small64	115	wavelet=15 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet16	small64	116	wavelet=16 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet17	small64	117	wavelet=17 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet18	small64	118	wavelet=18 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet19	small64	119	wavelet=19 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet20	small64	120	wavelet=20 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet21	small64	121	wavelet=21 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet22	small64	122	wavelet=22 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet23	small64	123	wavelet=23 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet24	small64	124	wavelet=24 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet25	small64	125	wavelet=25 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet26	small64	126	wavelet=26 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet27	small64	127	wavelet=27 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet28	small64	128	wavelet=28 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet29	small64	129	wavelet=29 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet30	small64	130	wavelet=30 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet31	small64	131	wavelet=31 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet32	small64	132	wavelet=32 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet33	small64	133	wavelet=33 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet34	small64	134	wavelet=34 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet35	small64	135	wavelet=35 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet36	small64	136	wavelet=36 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet37	small64	137	wavelet=37 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet38	small64	138	wavelet=38 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet39	small64	139	wavelet=39 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet40	small64	140	wavelet=40 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet41	small64	141	wavelet=41 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet42	small64	142	wavelet=42 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet43	small64	143	wavelet=43 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet44	small64	144	wavelet=44 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet45	small64	145	wavelet=45 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet46	small64	146	wavelet=46 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet47	small64	147	wavelet=47 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet48	small64	148	wavelet=48 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet49	small64	149	wavelet=49 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet50	small64	150	wavelet=50 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet51	small64	151	wavelet=51 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet52	small64	152	wavelet=52 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet53	small64	153	wavelet=53 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet54	small64	154	wavelet=54 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet55	small64	155	wavelet=55 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet56	small64	156	wavelet=56 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet57	small64	157	wavelet=57 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet58	small64	158	wavelet=58 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet59	small64	159	wavelet=59 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet60	small64	160	wavelet=60 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet61	small64	161	wavelet=61 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet62	small64	162	wavelet=62 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet63	small64	163	wavelet=63 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet64	small64	164	wavelet=64 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet65	small64	165	wavelet=65 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet66	small64	166	wavelet=66 scale=1048576 enc=1 quant=10 colorspace=9	-
+wavelet67	small64	167	wavelet=67 scale=1048576 enc=1 quant=10 colorspace=9	-
+wpt01	small64	201	wavelet=1 ttype=1 scale=1048576 enc=1 quant=10	-
+wpt17	small64	217	wavelet=17 ttype=1 scale=1048576 enc=1 quant=10	-
+wpt41	small64	241	wavelet=41 ttype=1 scale=1048576 enc=1 quant=10	-
+wpt63	small64	263	wavelet=63 ttype=1 scale=1048576 enc=1 quant=10	-
+wpt64	small64	264	wavelet=64 ttype=1 scale=1048576 enc=1 quant=10	-
+wpt65	small64	265	wavelet=65 ttype=1 scale=1048576 enc=1 quant=10	-
+wpt66	small64	266	wavelet=66 ttype=1 scale=1048576 enc=1 quant=10	-

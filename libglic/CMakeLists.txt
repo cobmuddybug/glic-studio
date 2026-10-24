@@ -2,14 +2,11 @@ add_library(glic STATIC
     src/bitio.cpp
     src/codec.cpp
     src/colorspaces.cpp
-    src/effects.cpp
-    src/encoding.cpp
     src/image_io.cpp
+    src/names.cpp
     src/planes.cpp
-    src/prediction.cpp
-    src/quantization.cpp
-    src/segment.cpp
-    src/wavelet.cpp
+    src/predict.cpp
+    src/wavelets.cpp
 )
 add_library(glic::glic ALIAS glic)
 
@@ -19,11 +16,9 @@ target_include_directories(glic
 )
 target_compile_features(glic PUBLIC cxx_std_20)
 
-# Output must be bit-exact across builds (golden tests):
-#  - no FMA contraction or fast-math, so float results don't depend on -march;
-#  - -fwrapv, because corrupt .glic data drives signed arithmetic past INT_MAX
-#    and upstream relied on wrap-around.
-target_compile_options(glic PRIVATE -ffp-contract=off -fwrapv -Wall -Wextra)
+# libglic must compute exactly what GLIC computes on the JVM:
+#  - no FMA contraction or fast-math: float expressions round like Java's;
+#  - -fwrapv: Java int arithmetic wraps on overflow.
+target_compile_options(glic PRIVATE -ffp-contract=off -fwrapv -fno-fast-math -Wall -Wextra)
 
-# Third-party header implementations; keep their warnings out of our output.
 set_source_files_properties(src/image_io.cpp PROPERTIES COMPILE_OPTIONS "-w")
