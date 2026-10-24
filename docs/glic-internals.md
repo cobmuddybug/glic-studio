@@ -183,6 +183,9 @@ the file.
 | D10 | DB5–DB10 and BIORTHOGONAL* silently map to Haar | Confusing names | Preserve. The UI lists only distinct filters and says what they alias to |
 | D11 | CMake downloads stb from `master` if it's missing | Unpinned dependency | stb is vendored |
 | D12 | Codec code prints progress to stdout | Noise from a library | Removed from libglic. The CLI keeps its own messages |
+| D13 | bit-io's `readInt(boolean unsigned, int size)` was ported as `readInt(bool isSigned, …)`, which inverts every flag | Negative packed values (wavelet coefficients, residuals, XOR deltas) decode as large positive numbers. RLE run counts are sign-extended. mod256 values lose their sign handling | Found after the refactor. See §10 |
+| D14 | Java's GUI stores `transform_scale = 2^slider` (slider 2–24, default 20 → 1,048,576). glic-cpp's `--scale 20` uses 20 literally | Nearly every wavelet coefficient rounds to 0, so wavelet modes decode to flat grey. This is why the default output is grey | Found after the refactor. See §10 |
+| D15 | glic-cpp's own wavelet code (instead of JWave) doesn't invert: forward then inverse ≠ identity for every filter, including Haar on 2×2 | Streaks and smearing even with the other bugs fixed | Found after the refactor. See §10 |
 
 ## 8. Data available for overlays (Hooks)
 
@@ -201,3 +204,16 @@ None of this costs anything when no hook is attached: capture happens behind a n
 - Segmentation of channel `p+1` depends on the RNG state left by channel `p` (D2). So segmentation must stay sequential and in channel order. Prediction, quantization, wavelets and encoding are independent per channel *after* segmentation. That makes them the natural per-channel parallelism point (design doc §9), as long as the REF/RANDOM RNG (also shared) is handled. RANDOM/REF/SAD would need per-channel RNG streams, and that would change output.
 - Decode is independent per channel throughout (except RANDOM's RNG).
 - Measured upstream on this machine (Release, 640×425 photo, including process start-up): default settings encode 167 ms and decode 96 ms; ANGLE encodes in 399 ms. The 512 px proxy target of under 100 ms (§9 of the design) will need optimisation work.
+
+## 10. Outcome: glic-cpp is not the base (2026-10-25)
+
+After the byte-identical refactor was finished (all 174 baseline files match), the golden
+images showed that upstream's *own* output is wrong. The default settings decode a photo to
+near-flat grey. D3, D13, D14 and D15 together mean glic-cpp is not a working GLIC
+implementation. It can't be fixed by flipping a switch, because its wavelets are wrong too.
+
+Decision (project owner): build libglic as a direct C++ port of the original Java GLIC, verified
+byte-for-byte against the Java codec run headless. The glic-cpp refactor is kept in git
+history (checkpoint commit) for reference. The parts that don't depend on the codec carry
+over: the API shape, GlicData, Hooks, cancellation, per-call RNG, hardening, CLI and test
+tooling.

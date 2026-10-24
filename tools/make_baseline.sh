@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
-# Regenerate tests/baseline/ from UNMODIFIED glic-cpp (third_party/glic-cpp-upstream).
+# Regenerate a golden set from a cases.tsv.
 #
-# This is ground truth for libglic's golden tests. Only rerun it if the upstream
-# copy changes, and never point it at libglic.
+#   tools/make_baseline.sh                      tests/baseline from UNMODIFIED glic-cpp
+#   tools/make_baseline.sh GLIC DIR             DIR (must contain cases.tsv) using binary GLIC
 #
-# Usage: tools/make_baseline.sh [glic-binary]
+# tests/baseline is ground truth for libglic: only regenerate it if the upstream
+# copy changes, and never with libglic's binary. tests/golden-provisional is
+# made with libglic's glic-cli for modes upstream cannot run (see its README).
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-cd "$root"
+# GLIC_WORK_ROOT redirects all reads/writes (used by check_baseline.sh).
+cd "${GLIC_WORK_ROOT:-$root}"
 
 glic="${1:-}"
 if [[ -z "$glic" ]]; then
@@ -18,7 +21,7 @@ if [[ -z "$glic" ]]; then
     glic="$root/build/upstream/glic"
 fi
 
-out=tests/baseline
+out="${2:-tests/baseline}"
 images=(tests/images/*.png)
 
 find "$out" -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} +
