@@ -1,0 +1,119 @@
+#include "worker.hpp"
+
+#include "resize.hpp"
+
+#include <chrono>
+
+namespace studio {
+
+namespace {
+double msSince(std::chrono::steady_clock::time_point t) {
+    return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t).count();
+}
+} // namespace
+
+RenderWorker::RenderWorker(std::function<void()> onResult)
+    : onResult_(std::move(onResult)), thread_([this] { run(); }) {}
+
+RenderWorker::~RenderWorker() {
+    {
+        std::lock_guard lock(mutex_);
+        stop_ = true;
+        cancel_ = true;
+    }
+    cv_.notify_all();
+    thread_.join();
+}
+
+void RenderWorker::submit(RenderRequest request) {
+    {
+        std::lock_guard lock(mutex_);
+        pending_ = std::move(request);
+        cancel_ = true;  // whatever is running is now older than the newest request
+    }
+    cv_.notify_all();
+}
+
+std::vector<RenderResult> RenderWorker::poll() {
+    std::lock_guard lock(mutex_);
+    std::vector<RenderResult> r = std::move(done_);
+    done_.clear();
+    return r;
+}
+
+void RenderWorker::run() {
+    while (true) {
+        RenderRequest req;
+        {
+            std::unique_lock lock(mutex_);
+            cv_.wait(lock, [this] { return stop_ || pending_.has_value(); });
+            if (stop_) return;
+            req = std::move(*pending_);
+            pending_.reset();
+            cancel_ = false;
+        }
+        busy_ = true;
+
+        RenderResult res;
+        res.generation = req.generation;
+        res.proxy = req.proxy;
+
+        std::shared_ptr<const glic::Image> input = req.source;
+        if (req.proxy && input) {
+            if (proxySourceKey_ != input.get() || proxyEdgeKey_ != req.proxyEdge) {
+                proxyImage_ = std::make_shared<const glic::Image>(downscaleToFit(*input, req.proxyEdge));
+                proxySourceKey_ = input.get();
+                proxySourceHold_ = input;  // keep the key alive so the pointer can't be reused
+                proxyEdgeKey_ = req.proxyEdge;
+            }
+            input = proxyImage_;
+        }
+
+        glic::Hooks hooks;
+        hooks.cancel = &cancel_;
+        bool cancelled = false;
+        if (!input || input->empty()) {
+            res.error = "No image";
+        } else {
+            res.sourceWidth = input->width;
+            res.sourceHeight = input->height;
+            auto t0 = std::chrono::steady_clock::now();
+            auto enc = glic::encode(*input, req.encode, &hooks);
+            res.encodeMs = msSince(t0);
+            if (enc.cancelled) {
+                cancelled = true;
+            } else if (!enc.ok) {
+                res.error = enc.error;
+            } else {
+                auto data = std::make_shared<const glic::GlicData>(std::move(enc.data));
+                auto t1 = std::chrono::steady_clock::now();
+                auto dec = glic::decode(*data, req.decode, &hooks);
+                res.decodeMs = msSince(t1);
+                if (dec.cancelled) {
+                    cancelled = true;
+                } else if (!dec.ok) {
+                    res.error = dec.error;
+                } else {
+                    res.ok = true;
+                    res.image = std::move(dec.image);
+                    res.data = std::move(data);
+                }
+            }
+        }
+
+        if (cancelled) {
+            res = RenderResult{};
+            res.generation = req.generation;
+            res.proxy = req.proxy;
+            res.cancelled = true;
+        }
+        {
+            std::lock_guard lock(mutex_);
+            done_.push_back(std::move(res));
+            busy_ = false;
+        }
+        if (onResult_) onResult_();
+    }
+}
+
+} // namespace studio

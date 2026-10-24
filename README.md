@@ -1,8 +1,8 @@
 # glic-studio
 
 A native Wayland editor for GLIC (GLitch Image Codec), built around exploring the codec's
-internals. **Status: M0 (foundation) done.** That's `libglic` and the `glic` CLI. The GUI starts
-in M1. See `docs/design.md`.
+internals. **Status: M1 (core loop) done.** That's `libglic`, the `glic` CLI, and the GUI with a
+live preview, view modes and PNG export. See `docs/design.md` for the roadmap.
 
 `libglic` is a C++ port of the original [GLIC](https://github.com/GlitchCodec/GLIC) (Java/Processing).
 It is byte-identical to GLIC on 220 golden outputs, which are produced by running the
@@ -17,7 +17,28 @@ ctest --test-dir build/rel            # golden + unit tests
 ```
 
 Sanitizer build: add `-DGLIC_SANITIZE=ON` (ASan + UBSan). Requirements: CMake ≥ 3.20, a
-C++20 compiler (GCC or Clang), Ninja. doctest is fetched by CMake.
+C++20 compiler (GCC or Clang), Ninja, and for the GUI SDL3 (≥ 3.2) and OpenGL 3.3. doctest and
+Dear ImGui are fetched by CMake. To build the library and CLI only, pass `-DGLIC_BUILD_APP=OFF`.
+
+## GUI
+
+```sh
+build/rel/app/glic-studio [image]
+```
+
+| Key | Action |
+|---|---|
+| Ctrl+O | Open image (portal dialog; drag-and-drop works too) |
+| Ctrl+S | Export PNG |
+| Ctrl+C | Copy the render to the clipboard |
+| Tab | Cycle view: glitched, original, split, difference |
+| Space (hold) | Show the original; Space+drag pans |
+| wheel, `+`/`-`, `0`, `1` | Zoom, fit, 100%; middle-drag pans |
+
+Each change shows a fast preview first (512 px longest edge, adjustable under Preview). The
+full-resolution render follows once input has been quiet for 150 ms. The app ID is `glic-studio`,
+for compositor window rules. `tools/gui_smoke.sh` opens test images in each view mode and saves
+screenshots. It needs a running session.
 
 ## CLI
 

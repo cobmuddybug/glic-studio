@@ -356,3 +356,20 @@ Per §11, where the code disagreed with the plan, the code won:
   sections for the corruption lab.
 - **Platform**: development happens on Omarchy/Hyprland. Nothing is distro-specific, but niri
   and Fedora are untested until someone runs them.
+
+### Recorded during M1
+
+- **Preview scheduling** (§4.3): changes made while a proxy render is in flight are coalesced.
+  The next proxy starts as soon as the current one finishes, rather than cancelling it, so slow
+  settings such as SAD still update during a drag. A full render in flight is cancelled by any
+  change. The logic lives in `app/model/preview_scheduler.*` and is unit-tested.
+- **Export** writes the full-resolution render cropped to the source size. GLIC's own decoder
+  pads sides below 64 px; the canvas and the export both hide that padding.
+- **Layout**: the settings panel docks to the right in wide windows and below the canvas in
+  narrow or portrait ones. Crossing the threshold rearranges it ("View → Rearrange for window
+  shape", on by default). "Reset layout" restores the default. ImGui's `imgui.ini` is disabled
+  until settings persistence lands in M8.
+- **Test hook**: `glic-studio --open IMG --spec ... --view MODE --capture OUT.png` screenshots
+  the window once the full render is on screen, then exits. `tools/gui_smoke.sh` uses it.
+- Only the Encode tab exists so far. Decode, Corrupt and Effects arrive with their milestones
+  rather than as empty tabs.

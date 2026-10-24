@@ -12,6 +12,7 @@ endif()
 
 option(GLIC_SANITIZE "Build with AddressSanitizer and UBSan" OFF)
 option(GLIC_BUILD_TESTS "Build tests" ON)
+option(GLIC_BUILD_APP "Build the glic-studio GUI (needs SDL3, OpenGL)" ON)
 
 if(GLIC_SANITIZE)
     add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=undefined)
@@ -20,6 +21,7 @@ endif()
 
 add_subdirectory(libglic)
 add_subdirectory(glic-cli)
+add_subdirectory(app)
 
 if(GLIC_BUILD_TESTS)
     enable_testing()
