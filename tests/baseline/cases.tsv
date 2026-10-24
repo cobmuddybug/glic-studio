@@ -1,0 +1,43 @@
+# Baseline case matrix for unmodified glic-cpp (third_party/glic-cpp-upstream).
+# Columns (tab-separated): name  images  encode-args  decode-args
+#   images: "all" or a comma-separated list of tests/images/*.png stems
+#   "-" means no extra args.
+# REF, SAD, BSAD and RANDOM are absent on purpose: upstream crashes on them
+# (see docs/glic-internals.md, "Upstream defects").
+default	all	-	-
+spiral_haar	all	--prediction SPIRAL --quantization 180 --wavelet HAAR	-
+angle_lab	all	--prediction ANGLE --colorspace LAB	-
+mod256_rle	all	--wavelet NONE --clamp mod256 --encoding rle	-
+nowavelet_9bit	all	--wavelet NONE --prediction DIFF --colorspace OHTA	-
+wpt_db4	all	--transform wpt --wavelet DB4 --scale 40 --colorspace YUV	-
+delta_coif	all	--encoding delta --wavelet COIF2 --prediction GRADIENT	-
+xor_ycbcr	all	--encoding xor --colorspace YCbCr --min-block 4 --max-block 64 --threshold 5 --prediction JPEGLS	-
+zigzag_sym4	all	--encoding zigzag --wavelet SYM4 --prediction WAVE --colorspace HSB	-
+rggbg_border	all	--colorspace R-GGB-G --prediction EDGE --border 255,0,128 --quantization 30	-
+gs_radial	all	--colorspace GS --prediction RADIAL --threshold 40	-
+raw_rgb	small64,contrast	--prediction NONE --wavelet NONE --quantization 0 --encoding raw --colorspace RGB	-
+minblock1	small64,flat	--min-block 1 --max-block 512 --threshold 2	-
+fx_upper	all	-	--effect SCANLINE --effect CHROMATIC_ABERRATION --effect GLITCH --effect DITHER --effect POSTERIZE --effect-blocksize 4 --effect PIXELATE
+fx_lower_noop	small64	-	--effect scanline --effect chromatic
+pred_corner	small64	--prediction CORNER	-
+pred_h	small64	--prediction H	-
+pred_v	small64	--prediction V	-
+pred_dc	small64	--prediction DC	-
+pred_dcmedian	small64	--prediction DCMEDIAN	-
+pred_median	small64	--prediction MEDIAN	-
+pred_avg	small64	--prediction AVG	-
+pred_truemotion	small64	--prediction TRUEMOTION	-
+pred_ldiag	small64	--prediction LDIAG	-
+pred_hv	small64	--prediction HV	-
+pred_none	small64	--prediction NONE	-
+pred_noise	small64	--prediction NOISE	-
+pred_mirror	small64	--prediction MIRROR	-
+pred_checkerboard	small64	--prediction CHECKERBOARD	-
+cs_rgb	small64	--colorspace RGB	-
+cs_cmy	small64	--colorspace CMY	-
+cs_xyz	small64	--colorspace XYZ	-
+cs_yxy	small64	--colorspace YXY	-
+cs_hcl	small64	--colorspace HCL	-
+cs_luv	small64	--colorspace LUV	-
+cs_ypbpr	small64	--colorspace YPbPr	-
+cs_ydbdr	small64	--colorspace YDbDr	-
