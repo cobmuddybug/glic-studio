@@ -458,3 +458,38 @@ Per §11, where the code disagreed with the plan, the code won:
 - **Byte map**: the payload's sections (segmentation, prediction, image data per channel) from
   the clean file's layout, a histogram of the bytes that changed, and the regions. Drag to add
   a region, which starts at 10× the base rate. Right-click a region to remove it.
+
+### Recorded during M6
+
+- **Randomize (R)** draws new encode settings from ranges chosen to stay usable. Each range,
+  and why, is documented at the top of `app/model/explore.cpp`. For example, scale stays
+  ≥ 2^8 with a wavelet (lower scales go grey), quantization ≤ 120, and SAD/BSAD are weighted
+  down because they are slow. When decoding is unlinked, the decode side becomes a perturbation
+  of the new encode side, so it stays a recognisable mismatch. Corruption is left alone:
+  `C`/`N` own it.
+- **Mutate (M)** replaces the canvas with a 3×3 grid of renders (longest edge 256 px). Each
+  cell is a perturbation of the current preset at the chosen strength. Small strengths nudge
+  numbers and rarely switch a choice, channels that were identical stay identical, and a
+  mutation always differs from its parent. Clicking a cell adopts it (a history node, label
+  "mutate") and makes a new grid around it. Esc or `M` closes the grid. The cells render on a
+  separate `BatchRenderer` (2–4 threads, each running `preset::render`, so a cell matches what
+  adopting it gives) and never share the preview's thread. libglic has no mutable globals.
+  The batch test runs clean under TSan.
+- **Determinism** (§5.2): randomize, mutate and the corruption reroll draw from explicitly
+  seeded splitmix64 generators. The exploration generator starts from a fixed seed each
+  session, so the same sequence of actions gives the same settings.
+- **History** (§5.4, `app/model/history.*`): a node is recorded when a full render of
+  new settings settles, not on every slider tick, with a 160 px thumbnail. Undo with
+  unsettled edits first returns to the last recorded state. Undo/redo follow the "preferred"
+  child, which is the last one visited. A change after an undo starts a branch, and the old
+  one is kept. The **History** strip (docked under the canvas) shows the root-to-current line
+  plus the redo line, dimmed. Nodes with several branches carry a count badge; right-click to
+  switch branch. History is cleared when a new image is opened, because thumbnails belong to
+  their image. It is not saved to disk (§10 is still open).
+- **Keys**: Ctrl+Z, Ctrl+Shift+Z or Ctrl+Y, R, M (also in a new Edit menu). Bare keys are ignored while typing.
+- **Test hook**: `--actions randomize,undo,redo,mutate,adopt:N` runs actions one at a time,
+  each after the previous render (and any grid cells) settles. `tools/gui_smoke.sh` captures
+  the grid and the history strip with it.
+- **ASan on the GUI** (`-DGLIC_SANITIZE=ON`): clean apart from one 128-byte leak report. It
+  comes from a one-time `pthread_once` allocation inside the dlopen'd GL driver, and shows up
+  even when the app just opens an image.

@@ -19,6 +19,7 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -32,6 +33,7 @@ struct Options {
     std::string preset;
     std::string exportPng;  // export the full render (with preset) once shown, then exit
     std::string overlays;   // open the overlays panel with these on, e.g. "blocks,predictors,ch=2"
+    std::vector<std::string> actions;  // run one by one, each once the previous render settles
     int width = 0, height = 0;
 };
 
@@ -45,6 +47,8 @@ void usage() {
         "  --view MODE        glitched | original | split | difference\n"
         "  --tab NAME         settings tab to show: encode | decode | corrupt\n"
         "  --overlays LIST    show codec overlays: blocks,predictors,coefficients[,ch=1|2|3]\n"
+        "  --actions LIST     run actions in order once each render settles (for tests):\n"
+        "                     randomize, undo, redo, mutate, adopt:N\n"
         "  --size WxH         initial window size in points\n"
         "  --capture OUT.png  screenshot the window once a full render is on screen, then exit\n"
         "  --export OUT.png   export the full render (preset embedded) once it is on screen, then exit");
@@ -68,6 +72,12 @@ bool parse(int argc, char** argv, Options& o) {
         else if (a == "--preset") { if (!next(o.preset)) return false; }
         else if (a == "--export") { if (!next(o.exportPng)) return false; }
         else if (a == "--overlays") { if (!next(o.overlays)) return false; }
+        else if (a == "--actions") {
+            if (!next(v)) return false;
+            v += ",";
+            for (size_t at = 0, comma; (comma = v.find(',', at)) != std::string::npos; at = comma + 1)
+                if (comma > at) o.actions.push_back(v.substr(at, comma - at));
+        }
         else if (a == "--size") {
             if (!next(v) || std::sscanf(v.c_str(), "%dx%d", &o.width, &o.height) != 2) return false;
         } else if (a == "-h" || a == "--help") { return false; }
@@ -215,7 +225,7 @@ int main(int argc, char** argv) {
         while (!app.quitRequested()) {
             int timeout = app.idleTimeoutMs();
             // Capture mode must keep drawing without input events.
-            if ((!opt.capture.empty() || !opt.exportPng.empty()) && (timeout < 0 || timeout > 20)) timeout = 20;
+            if ((!opt.capture.empty() || !opt.exportPng.empty() || !opt.actions.empty()) && (timeout < 0 || timeout > 20)) timeout = 20;
             auto events = platform.waitEvents(timeout, [&](const SDL_Event& e) {
                 ImGui_ImplSDL3_ProcessEvent(&e);
                 if (e.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
@@ -236,6 +246,16 @@ int main(int argc, char** argv) {
             glClear(GL_COLOR_BUFFER_BIT);
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
+            if (!opt.actions.empty() && app.scriptIdle()) {
+                const std::string a = opt.actions.front();
+                opt.actions.erase(opt.actions.begin());
+                if (!app.runNamedAction(a)) {
+                    std::fprintf(stderr, "--actions: unknown action \"%s\"\n", a.c_str());
+                    exitCode = 1;
+                    break;
+                }
+                continue;  // let the action's render start before checking again
+            }
             if (!opt.exportPng.empty() && app.fullRenderShown()) {
                 bool ok = app.exportTo(opt.exportPng);
                 std::fprintf(stderr, "glic-studio: %s %s\n", ok ? "exported" : "FAILED to export", opt.exportPng.c_str());
@@ -243,7 +263,7 @@ int main(int argc, char** argv) {
                 break;
             }
             if (!opt.capture.empty()) {
-                if (captureCountdown < 0 && app.fullRenderShown()) captureCountdown = 3;  // let layout settle
+                if (captureCountdown < 0 && app.scriptIdle() && opt.actions.empty()) captureCountdown = 3;  // let layout settle
                 if (captureCountdown > 0 && --captureCountdown == 0) {
                     bool ok = writeScreenshot(platform.window(), opt.capture);
                     std::fprintf(stderr, "glic-studio: %s %s\n", ok ? "captured" : "FAILED to capture", opt.capture.c_str());

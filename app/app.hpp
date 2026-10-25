@@ -1,9 +1,12 @@
 #pragma once
 
+#include "model/explore.hpp"
+#include "model/history.hpp"
 #include "model/preview_scheduler.hpp"
 #include "render/overlay.hpp"
 #include "platform/platform.hpp"
 #include "render/texture.hpp"
+#include "render/batch.hpp"
 #include "render/worker.hpp"
 
 #include "preset.hpp"
@@ -11,6 +14,7 @@
 #include <glic/glic.hpp>
 
 #include <future>
+#include <map>
 #include <vector>
 #include <memory>
 #include <optional>
@@ -42,6 +46,22 @@ struct ShownRender {
     std::shared_ptr<const glic::Capture> capture;  // overlay data, if it was asked for
     bool corrupted = false;                        // decoded from corrupted bytes
     glic::CorruptionStats corruption;
+};
+
+// The mutate grid (design §M6): nine small renders, each a perturbation of
+// the preset it was made from.
+struct MutateGrid {
+    static constexpr int kCells = 9;
+    static constexpr int kCellEdge = 256;  // longest edge of the cell renders
+    bool open = false;
+    float strength = 0.25f;
+    uint64_t batch = 0;
+    std::shared_ptr<const glic::Image> image;  // source downscaled for the cells
+    std::vector<glic::preset::Preset> presets;
+    std::array<Texture, kCells> textures;
+    std::array<int, kCells> state{};           // 0 rendering, 1 ready, 2 failed
+    std::array<std::string, kCells> errors;
+    int cellWidth = 0, cellHeight = 0;         // useful size inside the (padded) renders
 };
 
 class App {
@@ -105,6 +125,27 @@ public:
     int64_t coefficientPeak() const { return coefficientPeak_; }
     const std::array<double, glic::kPredictionCount>& predictorShares() const { return predictorShares_; }
 
+    // Exploration (design §M6).
+    // Applies a preset quietly (undo, history, mutate); `label` names the
+    // history node the next settled render records.
+    void restore(const glic::preset::Preset& p, std::string label);
+    void undo();
+    void redo();
+    void jumpHistory(int node);
+    void randomizeAll();
+    const History& history() const { return history_; }
+    const Texture* historyTexture(int node) const;
+    MutateGrid& mutateGrid() { return grid_; }
+    void openMutateGrid(bool open);
+    void regenerateMutations();
+    void adoptMutation(int cell);
+    bool hasSource() const { return source_ != nullptr; }
+    // For --actions: runs "randomize", "undo", "redo", "mutate" or "adopt:N";
+    // false for an unknown name. scriptIdle(): the full render and any grid
+    // cells are done, so the next action may run.
+    bool runNamedAction(const std::string& name);
+    bool scriptIdle() const;
+
     // Select a settings tab on the next frame ("Encode", "Decode").
     void selectTab(std::string tab) { selectTab_ = std::move(tab); }
     std::string takeTabSelection() { return std::exchange(selectTab_, {}); }
@@ -123,6 +164,8 @@ private:
     void embeddedPresetBar();
     void copyToClipboard();
     void refreshOverlayTextures();
+    void recordHistory();
+    void pumpBatch();
     glic::Image croppedShown() const;
     double nowMs() const;
 
@@ -154,6 +197,13 @@ private:
     bool overlayDirty_ = true;
     int64_t coefficientPeak_ = 0;
     std::array<double, glic::kPredictionCount> predictorShares_{};
+
+    History history_;
+    std::map<int, std::unique_ptr<Texture>> historyTex_;
+    std::string historyLabel_ = "open";
+    ExploreRng exploreRng_;
+    MutateGrid grid_;
+    BatchRenderer batch_;
 
     std::string exportPath_;  // set while an export waits for its full render
 

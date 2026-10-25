@@ -5,6 +5,7 @@
 #include "render/resize.hpp"
 #include "ui/canvas.hpp"
 #include "ui/corrupt_tab.hpp"
+#include "ui/explore_ui.hpp"
 #include "ui/overlay_panel.hpp"
 #include "ui/keybindings.hpp"
 #include "ui/settings_panel.hpp"
@@ -28,6 +29,8 @@ namespace {
 
 constexpr const char* kCanvasWindow = "Canvas";
 constexpr const char* kSettingsWindow = "Settings";
+constexpr const char* kHistoryWindow = "History";
+constexpr int kThumbnailEdge = 160;
 
 glic::Image crop(const glic::Image& img, int w, int h) {
     if (img.width == w && img.height == h) return img;
@@ -54,7 +57,9 @@ const char* viewModeName(ViewMode m) {
 }
 
 App::App(Platform& platform)
-    : platform_(platform), worker_([&platform] { platform.postEvent(AppEventKind::RenderDone); }) {
+    : platform_(platform),
+      worker_([&platform] { platform.postEvent(AppEventKind::RenderDone); }),
+      batch_(0, [&platform] { platform.postEvent(AppEventKind::RenderDone); }) {
     linkChannels_ = channelsIdentical(settings_);
 }
 
@@ -290,6 +295,145 @@ void App::setDecodeLinked(bool linked) {
     settingsChanged();
 }
 
+// ------------------------------------------------------------ exploration
+
+void App::restore(const glic::preset::Preset& p, std::string label) {
+    presetName_ = p.name;
+    presetDocument_ = p.document;
+    settings_ = p.encode;
+    linkChannels_ = channelsIdentical(settings_);
+    decodeLinked_ = p.decodeLinked;
+    decodeSettings_ = p.decode;
+    decodeChannelsLinked_ = channelsIdentical(decodeSettings_);
+    corruption_ = p.corruption;
+    historyLabel_ = std::move(label);
+    settingsChanged();
+}
+
+void App::recordHistory() {
+    const bool added = history_.record(currentPreset(), historyLabel_);
+    historyLabel_ = "edit";
+    const int cur = history_.current();
+    if (cur < 0 || (!added && !history_.node(cur).thumbnail.empty())) return;
+    glic::Image thumb = downscaleToFit(croppedShown(), kThumbnailEdge);
+    auto& tex = historyTex_[cur];
+    if (!tex) tex = std::make_unique<Texture>();
+    tex->upload(thumb);
+    history_.setThumbnail(cur, std::move(thumb));
+}
+
+const Texture* App::historyTexture(int node) const {
+    auto it = historyTex_.find(node);
+    return it != historyTex_.end() && it->second && it->second->valid() ? it->second.get() : nullptr;
+}
+
+void App::undo() {
+    if (history_.empty()) return;
+    // Unsettled edits since the last recorded state: go back to that state first.
+    const auto& here = history_.node(history_.current()).preset;
+    if (!here.sameSettings(currentPreset())) {
+        restore(here, "undo");
+        setStatus("Undo");
+        return;
+    }
+    if (const auto* p = history_.undo()) {
+        restore(*p, "undo");
+        setStatus("Undo");
+    } else {
+        setStatus("Nothing to undo");
+    }
+}
+
+void App::redo() {
+    if (const auto* p = history_.redo()) {
+        restore(*p, "redo");
+        setStatus("Redo");
+    } else {
+        setStatus("Nothing to redo");
+    }
+}
+
+void App::jumpHistory(int node) {
+    if (const auto* p = history_.jumpTo(node)) restore(*p, "history");
+}
+
+void App::randomizeAll() {
+    glic::preset::Preset p = currentPreset();
+    randomize(p, exploreRng_);
+    p.name.clear();
+    restore(p, "randomize");
+    setStatus("Randomized");
+}
+
+void App::openMutateGrid(bool open) {
+    if (open && !source_) {
+        setStatus("Open an image first", true);
+        return;
+    }
+    grid_.open = open;
+    framesToRender_ = std::max(framesToRender_, 2);
+    if (!open) {
+        batch_.cancel();
+        return;
+    }
+    grid_.image = std::make_shared<const glic::Image>(downscaleToFit(*source_, MutateGrid::kCellEdge));
+    grid_.cellWidth = grid_.image->width;
+    grid_.cellHeight = grid_.image->height;
+    regenerateMutations();
+}
+
+void App::regenerateMutations() {
+    if (!grid_.open || !grid_.image) return;
+    const glic::preset::Preset base = currentPreset();
+    grid_.presets.clear();
+    for (int i = 0; i < MutateGrid::kCells; i++) {
+        grid_.presets.push_back(mutate(base, grid_.strength, exploreRng_));
+        grid_.presets.back().name.clear();
+        grid_.state[static_cast<size_t>(i)] = 0;
+        grid_.errors[static_cast<size_t>(i)].clear();
+    }
+    batch_.submit(++grid_.batch, grid_.image, grid_.presets);
+}
+
+void App::adoptMutation(int cell) {
+    if (cell < 0 || cell >= static_cast<int>(grid_.presets.size())) return;
+    restore(grid_.presets[static_cast<size_t>(cell)], "mutate");
+    setStatus("Adopted mutation " + std::to_string(cell + 1));
+    regenerateMutations();  // keep exploring from the adopted preset
+}
+
+bool App::runNamedAction(const std::string& name) {
+    if (name == "randomize") randomizeAll();
+    else if (name == "undo") undo();
+    else if (name == "redo") redo();
+    else if (name == "mutate") openMutateGrid(!grid_.open);
+    else if (name.rfind("adopt:", 0) == 0) adoptMutation(std::atoi(name.c_str() + 6) - 1);
+    else return false;
+    return true;
+}
+
+bool App::scriptIdle() const {
+    if (!fullRenderShown()) return false;
+    if (grid_.open)
+        for (int s : grid_.state)
+            if (s == 0) return false;
+    return true;
+}
+
+void App::pumpBatch() {
+    for (auto& r : batch_.poll()) {
+        if (r.batch != grid_.batch || r.index < 0 || r.index >= MutateGrid::kCells) continue;
+        const auto i = static_cast<size_t>(r.index);
+        if (r.ok) {
+            grid_.textures[i].upload(r.image);
+            grid_.state[i] = 1;
+        } else {
+            grid_.state[i] = 2;
+            grid_.errors[i] = r.error;
+        }
+    }
+}
+
 void App::setCorruptionEnabled(bool on) {
     if (on == corruption_.enabled) return;
     corruption_.enabled = on;
@@ -387,6 +531,7 @@ void App::acceptResult(RenderResult r) {
     diffDirty_ = true;
     overlayDirty_ = true;
     if (statusError_) setStatus("");
+    if (!shown_.proxy && scheduler_.fullIsCurrent()) recordHistory();
     if (!shown_.proxy && !exportPath_.empty() && scheduler_.fullIsCurrent()) finishExport();
 }
 
@@ -436,6 +581,10 @@ void App::runAction(int a) {
     case Action::ZoomFit: view_.fit = true; break;
     case Action::Zoom100: zoomTo100(view_, fb); break;
     case Action::ToggleDecodeLink: setDecodeLinked(!decodeLinked_); break;
+    case Action::Undo: undo(); break;
+    case Action::Redo: redo(); break;
+    case Action::Randomize: randomizeAll(); break;
+    case Action::MutateGrid: openMutateGrid(!grid_.open); break;
     case Action::ToggleCorruption: setCorruptionEnabled(!corruption_.enabled); break;
     case Action::RerollSeed: rerollCorruptionSeed(); break;
     case Action::ToggleOverlays:
@@ -476,7 +625,12 @@ void App::buildLayout(bool force) {
         const float ratio = std::clamp(380 * scale / vp->WorkSize.x, 0.25f, 0.45f);
         settings = ImGui::DockBuilderSplitNode(dock, ImGuiDir_Right, ratio, nullptr, &canvas);
     }
+    const float historyHeight = (kThumbnailEdge * 0.55f + 40) * scale;
+    const float canvasHeight = narrow ? vp->WorkSize.y * 0.55f : vp->WorkSize.y;
+    const ImGuiID history = ImGui::DockBuilderSplitNode(canvas, ImGuiDir_Down,
+                                                        std::clamp(historyHeight / canvasHeight, 0.08f, 0.3f), nullptr, &canvas);
     ImGui::DockBuilderDockWindow(kCanvasWindow, canvas);
+    ImGui::DockBuilderDockWindow(kHistoryWindow, history);
     ImGui::DockBuilderDockWindow(kSettingsWindow, settings);
     ImGui::DockBuilderFinish(dock);
     layoutBuilt_ = true;
@@ -512,6 +666,14 @@ void App::menuBar() {
         ImGui::Separator();
         if (ImGui::MenuItem("Reset layout")) buildLayout(true);
         ImGui::MenuItem("Rearrange for window shape", nullptr, &autoArrange_);
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Edit")) {
+        if (ImGui::MenuItem("Undo", shortcutLabel(Action::Undo), false, !history_.empty())) undo();
+        if (ImGui::MenuItem("Redo", shortcutLabel(Action::Redo), false, history_.canRedo())) redo();
+        ImGui::Separator();
+        if (ImGui::MenuItem("Randomize", shortcutLabel(Action::Randomize))) randomizeAll();
+        if (ImGui::MenuItem("Mutate grid", shortcutLabel(Action::MutateGrid), grid_.open)) openMutateGrid(!grid_.open);
         ImGui::EndMenu();
     }
     presetsMenu();
@@ -610,6 +772,10 @@ void App::frame() {
             glitchedTex_.clear();
             diffTex_.clear();
             shown_ = ShownRender{};
+            history_.clear();
+            historyTex_.clear();
+            historyLabel_ = "open";
+            if (grid_.open) openMutateGrid(true);  // re-made for the new image
             view_.fit = true;
             scheduler_ = PreviewScheduler{};
             setStatus("Opened " + std::filesystem::path(sourcePath_).filename().string());
@@ -620,6 +786,7 @@ void App::frame() {
         framesToRender_ = std::max(framesToRender_, 2);
     }
     pumpRender();
+    pumpBatch();
 
     for (Action a : pressedActions()) runAction(static_cast<int>(a));
     const bool holdOriginal = ImGui::IsKeyDown(kHoldOriginalKey) && !ImGui::GetIO().WantTextInput;
@@ -677,15 +844,22 @@ void App::frame() {
             ci.overlayHeight = shown_.encodedHeight;
         }
         embeddedPresetBar();
-        const ImVec2 canvasPos = ImGui::GetCursorScreenPos();
-        const CanvasOutput co = drawCanvas(view_, ci, holdOriginal);
-        if (overlays_.panel) {
-            ImGui::SetCursorScreenPos(canvasPos);
-            drawOverlayPanel(*this, co);
+        if (grid_.open) {
+            drawMutateGrid(*this);
+        } else {
+            const ImVec2 canvasPos = ImGui::GetCursorScreenPos();
+            const CanvasOutput co = drawCanvas(view_, ci, holdOriginal);
+            if (overlays_.panel) {
+                ImGui::SetCursorScreenPos(canvasPos);
+                drawOverlayPanel(*this, co);
+            }
         }
     }
     ImGui::End();
     ImGui::PopStyleVar();
+
+    if (ImGui::Begin(kHistoryWindow, nullptr, ImGuiWindowFlags_HorizontalScrollbar)) drawHistoryStrip(*this);
+    ImGui::End();
 
     if (ImGui::Begin(kSettingsWindow)) drawSettingsPanel(*this);
     ImGui::End();

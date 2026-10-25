@@ -19,6 +19,11 @@ const std::vector<KeyBinding>& keyBindings() {
         {Action::ToggleOverlays, ImGuiKey_O, "O", false},
         {Action::ToggleCorruption, ImGuiKey_C, "C", false},
         {Action::RerollSeed, ImGuiKey_N, "N", false},
+        {Action::Undo, ImGuiMod_Ctrl | ImGuiKey_Z, "Ctrl+Z", false},
+        {Action::Redo, ImGuiMod_Ctrl | ImGuiMod_Shift | ImGuiKey_Z, "Ctrl+Shift+Z", false},
+        {Action::Redo, ImGuiMod_Ctrl | ImGuiKey_Y, "Ctrl+Y", false},
+        {Action::Randomize, ImGuiKey_R, "R", false},
+        {Action::MutateGrid, ImGuiKey_M, "M", false},
     };
     return table;
 }

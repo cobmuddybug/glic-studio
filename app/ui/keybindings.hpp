@@ -23,6 +23,10 @@ enum class Action {
     ToggleOverlays,
     ToggleCorruption,
     RerollSeed,
+    Undo,
+    Redo,
+    Randomize,
+    MutateGrid,
 };
 
 struct KeyBinding {
