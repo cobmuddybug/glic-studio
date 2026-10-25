@@ -1,6 +1,7 @@
 // glic-studio: a GLIC editor (SDL3 + OpenGL 3.3 + Dear ImGui).
 
 #include "app.hpp"
+#include "model/config.hpp"
 #include "platform/platform.hpp"
 
 #include <glic/image_io.hpp>
@@ -34,6 +35,7 @@ struct Options {
     std::string exportPng;  // export the full render (with preset) once shown, then exit
     std::string overlays;   // open the overlays panel with these on, e.g. "blocks,predictors,ch=2"
     std::vector<std::string> actions;  // run one by one, each once the previous render settles
+    bool noConfig = false;  // neither read nor write ~/.config/glic-studio
     int width = 0, height = 0;
 };
 
@@ -50,6 +52,8 @@ void usage() {
         "  --actions LIST     run actions in order once each render settles (for tests):\n"
         "                     randomize, undo, redo, mutate, adopt:N, export-anim:PATH\n"
         "  --size WxH         initial window size in points\n"
+        "  --no-config        don't read or write the config directory (always the case with\n"
+        "                     --capture, --export and --actions, so tests start clean)\n"
         "  --capture OUT.png  screenshot the window once a full render is on screen, then exit\n"
         "  --export OUT.png   export the full render (preset embedded) once it is on screen, then exit");
 }
@@ -72,6 +76,7 @@ bool parse(int argc, char** argv, Options& o) {
         else if (a == "--preset") { if (!next(o.preset)) return false; }
         else if (a == "--export") { if (!next(o.exportPng)) return false; }
         else if (a == "--overlays") { if (!next(o.overlays)) return false; }
+        else if (a == "--no-config") { o.noConfig = true; }
         else if (a == "--actions") {
             if (!next(v)) return false;
             v += ",";
@@ -142,9 +147,25 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    // Persistence (design §M8), skipped for scripted runs so tests are reproducible.
+    const bool useConfig = !opt.noConfig && opt.capture.empty() && opt.exportPng.empty() && opt.actions.empty();
+    const std::filesystem::path configDir = studio::configDir();
+    const std::string configPath = (configDir / "config.json").string();
+    const std::string layoutPath = (configDir / "layout.ini").string();
+    studio::StudioConfig config;
+    if (useConfig) {
+        std::string err;
+        config = studio::loadConfig(configPath, &err);
+        if (!err.empty()) std::fprintf(stderr, "glic-studio: %s\n", err.c_str());
+        std::error_code ec;
+        std::filesystem::create_directories(configDir, ec);
+    }
+
     studio::Platform platform;
     if (!platform.init("glic-studio")) return 1;
     if (opt.width > 0) SDL_SetWindowSize(platform.window(), opt.width, opt.height);
+    else if (useConfig && config.windowWidth > 0 && config.windowHeight > 0)
+        SDL_SetWindowSize(platform.window(), config.windowWidth, config.windowHeight);
     std::fprintf(stderr, "glic-studio: video driver %s, content scale %.2f\n", platform.videoDriver().c_str(),
                  platform.contentScale());
 
@@ -152,7 +173,7 @@ int main(int argc, char** argv) {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    io.IniFilename = nullptr;  // layout persistence arrives in M8 (~/.config/glic-studio)
+    io.IniFilename = useConfig ? layoutPath.c_str() : nullptr;  // the dock layout
     io.Fonts->AddFontDefaultVector();
     float scale = platform.contentScale();
     applyStyle(scale);
@@ -163,6 +184,8 @@ int main(int argc, char** argv) {
     {
         studio::App app(platform);
         app.setBundledPresetDirs(presetDirs(argv[0]));
+        // Settings given on the command line replace the last session's.
+        if (useConfig) app.useConfig(config, opt.preset.empty() && opt.spec.empty() && opt.decode.empty());
         if (!opt.preset.empty()) {
             if (std::filesystem::path(opt.preset).extension() == ".json") {
                 if (!app.loadPresetFile(opt.preset)) return 1;
@@ -278,6 +301,11 @@ int main(int argc, char** argv) {
                 }
             }
             SDL_GL_SwapWindow(platform.window());
+        }
+        if (useConfig) {
+            studio::StudioConfig out = app.config();
+            SDL_GetWindowSize(platform.window(), &out.windowWidth, &out.windowHeight);
+            if (!studio::saveConfig(configPath, out)) std::fprintf(stderr, "glic-studio: could not write %s\n", configPath.c_str());
         }
     }
 

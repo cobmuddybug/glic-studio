@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=glic-studio
+GenericName=Glitch Codec Editor
+Comment=Explore and glitch images with GLIC, the GLitch Image Codec
+Exec=glic-studio %f
+Icon=glic-studio
+Terminal=false
+Categories=Graphics;2DGraphics;RasterGraphics;
+MimeType=image/png;image/jpeg;image/bmp;image/gif;image/x-tga;
+Keywords=glitch;codec;GLIC;wavelet;databending;
+StartupWMClass=glic-studio

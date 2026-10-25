@@ -460,6 +460,23 @@ void App::pumpAnimation() {
     anim_.lastProgress = p;
 }
 
+// ------------------------------------------------------------ persistence
+
+void App::useConfig(StudioConfig config, bool restorePreset) {
+    config_ = std::move(config);
+    proxyEdge_ = config_.proxyEdge;
+    autoArrange_ = config_.autoArrange;
+    if (restorePreset && config_.lastPreset) restore(*config_.lastPreset, "open");
+}
+
+StudioConfig App::config() const {
+    StudioConfig c = config_;
+    c.lastPreset = currentPreset();
+    c.proxyEdge = proxyEdge_;
+    c.autoArrange = autoArrange_;
+    return c;
+}
+
 bool App::runNamedAction(const std::string& name) {
     if (name == "randomize") randomizeAll();
     else if (name == "undo") undo();
@@ -680,6 +697,14 @@ void App::buildLayout(bool force) {
     if (!force && layoutBuilt_ && (!autoArrange_ || narrow == layoutNarrow_)) return;
 
     const ImGuiID dock = ImGui::GetID("##dockspace");
+    if (!force && !layoutBuilt_) {
+        // A layout saved by a previous session (layout.ini): keep it.
+        if (ImGuiDockNode* node = ImGui::DockBuilderGetNode(dock); node && node->IsSplitNode()) {
+            layoutBuilt_ = true;
+            layoutNarrow_ = narrow;
+            return;
+        }
+    }
     ImGui::DockBuilderRemoveNode(dock);
     ImGui::DockBuilderAddNode(dock, ImGuiDockNodeFlags_DockSpace);
     ImGui::DockBuilderSetNodeSize(dock, vp->WorkSize);
@@ -706,6 +731,16 @@ void App::menuBar() {
     if (!ImGui::BeginMainMenuBar()) return;
     if (ImGui::BeginMenu("File")) {
         if (ImGui::MenuItem("Open image...", shortcutLabel(Action::OpenImage))) runAction(static_cast<int>(Action::OpenImage));
+        if (ImGui::BeginMenu("Open recent", !config_.recentFiles.empty())) {
+            std::string open;
+            for (const auto& f : config_.recentFiles)
+                if (ImGui::MenuItem(std::filesystem::path(f).filename().string().c_str())) open = f;
+                else ImGui::SetItemTooltip("%s", f.c_str());
+            ImGui::Separator();
+            if (ImGui::MenuItem("Clear list")) config_.recentFiles.clear();
+            ImGui::EndMenu();
+            if (!open.empty()) openPath(open);
+        }
         if (ImGui::MenuItem("Export PNG...", shortcutLabel(Action::ExportPng), false, source_ != nullptr))
             runAction(static_cast<int>(Action::ExportPng));
         if (ImGui::MenuItem("Copy image", shortcutLabel(Action::CopyImage), false, shown_.valid))
@@ -849,9 +884,12 @@ void App::frame() {
             view_.fit = true;
             scheduler_ = PreviewScheduler{};
             setStatus("Opened " + std::filesystem::path(sourcePath_).filename().string());
+            addRecent(config_, sourcePath_);
             settingsChanged();
         } else {
             setStatus("Could not open " + loadingPath_, true);
+            auto& recent = config_.recentFiles;
+            recent.erase(std::remove(recent.begin(), recent.end(), loadingPath_), recent.end());
         }
         framesToRender_ = std::max(framesToRender_, 2);
     }

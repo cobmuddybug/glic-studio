@@ -1,6 +1,7 @@
 # studio_core: app logic with no UI or platform dependencies (unit-tested).
 add_library(studio_core STATIC
     model/animation.cpp
+    model/config.cpp
     model/explore.cpp
     model/history.cpp
     model/preview_scheduler.cpp
@@ -63,3 +64,6 @@ target_compile_definitions(glic-studio PRIVATE GLIC_STUDIO_SOURCE_DIR="${PROJECT
 target_compile_options(glic-studio PRIVATE -Wall -Wextra)
 install(TARGETS glic-studio RUNTIME DESTINATION bin)
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/presets/ DESTINATION share/glic-studio/presets FILES_MATCHING PATTERN "*.json")
+# Desktop integration (design §M8): the file name matches the Wayland app ID.
+install(FILES ${PROJECT_SOURCE_DIR}/packaging/glic-studio.desktop DESTINATION share/applications)
+install(FILES ${PROJECT_SOURCE_DIR}/packaging/glic-studio.svg DESTINATION share/icons/hicolor/scalable/apps)

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "model/config.hpp"
 #include "model/explore.hpp"
 #include "model/history.hpp"
 #include "model/preview_scheduler.hpp"
@@ -159,6 +160,11 @@ public:
     void adoptMutation(int cell);
     bool hasSource() const { return source_ != nullptr; }
 
+    // Persistence (design §M8). useConfig() applies a loaded config (and the
+    // last preset if `restorePreset`); config() is the state to save on exit.
+    void useConfig(StudioConfig config, bool restorePreset);
+    StudioConfig config() const;
+
     AnimationState& animation() { return anim_; }
     void requestAnimationPreview();       // renders anim_.previewFrame
     void requestAnimationExport();        // asks where to save, then exports
@@ -232,6 +238,7 @@ private:
     MutateGrid grid_;
     BatchRenderer batch_;
     AnimationState anim_;
+    StudioConfig config_;
     BatchRenderer animPreview_;
     AnimationExporter exporter_;
 

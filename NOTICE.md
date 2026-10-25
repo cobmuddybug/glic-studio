@@ -32,8 +32,17 @@ converted to glic-studio JSON by `tools/convert_glic_presets.py`. `presets/examp
 | Processing 3.5.4 | Downloaded by `tools/java-harness/build.sh` into `build/` to preprocess and run GLIC for ground truth. Not vendored or linked | core: LGPL-2.1; IDE: GPL-2.0 |
 | doctest | Test framework, fetched by CMake | MIT |
 
-Dependencies added in later milestones are listed in the README when they land
-(SDL3: zlib; Dear ImGui: MIT; lodepng: zlib; nlohmann/json: MIT).
+## Libraries the program uses
+
+| Component | Use | Licence |
+|---|---|---|
+| SDL3 (system package) | Window, input, OpenGL context, portal file dialogs, clipboard | zlib |
+| Dear ImGui `v1.92.9b-docking` (fetched by CMake) | The GUI | MIT |
+| nlohmann/json 3.11 (system package, or fetched by CMake) | Presets and the config file | MIT |
+| ffmpeg (optional, run as a separate program when it is on PATH; never linked) | MP4 and GIF animation export | LGPL/GPL, depending on the build installed |
+
+PNG metadata (iTXt) is read and written by glic-studio's own small chunk code
+(`preset/png_meta.cpp`), so lodepng, which the design doc proposed, is not used.
 
 ## Test assets
 

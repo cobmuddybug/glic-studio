@@ -517,3 +517,25 @@ Per §11, where the code disagreed with the plan, the code won:
   the current settings or history.
 - **Test hook**: `--actions export-anim:PATH` exports with the tab's settings (.mp4, .gif, or a
   folder for PNG frames), and the capture waits for it to finish.
+
+### Recorded during M8
+
+- **Persistence** (`app/model/config.*`): `config.json` holds recent files (10), the last preset
+  (in the preset format), the window size, the proxy size and "rearrange for window shape".
+  ImGui's `layout.ini` sits next to it, and a saved dock layout is reused instead of the
+  default being rebuilt. The directory is `$GLIC_STUDIO_CONFIG_DIR`, else
+  `$XDG_CONFIG_HOME/glic-studio`, else `~/.config/glic-studio`. A broken file falls back to
+  defaults with a message, unknown fields survive, and writes go through a temporary file.
+  Settings given on the command line (`--preset`, `--spec`, `--decode`) replace the last
+  session's. Scripted runs (`--capture`, `--export`, `--actions`) and `--no-config` never read
+  or write it, so the smoke and parity scripts stay reproducible.
+- **File → Open recent** (missing files drop off the list when they fail to open).
+- **Desktop integration**: `packaging/glic-studio.desktop` (validated with
+  `desktop-file-validate`; its name matches the app ID) and `packaging/glic-studio.svg`, both
+  installed by `cmake --install`. The window icon comes from the desktop file through the app
+  ID, the Wayland way.
+- **README** covers building (Arch and Fedora packages), installing, the app, the CLI, the
+  preset format, testing and licences. `NOTICE.md` now lists the libraries actually used.
+  lodepng was never needed: iTXt chunks are handled by `preset/png_meta.cpp`.
+- **Still open (§10)**: the final app name, and whether history should persist between
+  sessions (it is per session for now).
