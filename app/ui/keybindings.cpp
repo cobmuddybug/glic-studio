@@ -6,6 +6,7 @@ const std::vector<KeyBinding>& keyBindings() {
     static const std::vector<KeyBinding> table = {
         {Action::OpenImage, ImGuiMod_Ctrl | ImGuiKey_O, "Ctrl+O", true},
         {Action::ExportPng, ImGuiMod_Ctrl | ImGuiKey_S, "Ctrl+S", true},
+        {Action::SavePreset, ImGuiMod_Ctrl | ImGuiMod_Shift | ImGuiKey_S, "Ctrl+Shift+S", true},
         {Action::CopyImage, ImGuiMod_Ctrl | ImGuiKey_C, "Ctrl+C", false},
         {Action::CycleView, ImGuiKey_Tab, "Tab", false},
         {Action::ZoomIn, ImGuiKey_Equal, "+", false},

@@ -19,6 +19,7 @@ enum class Action {
     ZoomFit,
     Zoom100,
     ToggleDecodeLink,
+    SavePreset,
 };
 
 struct KeyBinding {

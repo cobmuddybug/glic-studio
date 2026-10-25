@@ -21,6 +21,7 @@ endif()
 
 add_subdirectory(libglic)
 add_subdirectory(glic-cli)
+add_subdirectory(preset)
 add_subdirectory(app)
 
 if(GLIC_BUILD_TESTS)

@@ -25,9 +25,12 @@ void SDLCALL dialogCallback(void* userdata, const char* const* filelist, int) {
 }
 
 const SDL_DialogFileFilter kImageFilters[] = {
+    {"Images and presets", "png;jpg;jpeg;bmp;tga;gif;psd;pnm;ppm;pgm;hdr;json"},
     {"Images", "png;jpg;jpeg;bmp;tga;gif;psd;pnm;ppm;pgm;hdr"},
+    {"glic-studio presets", "json"},
     {"All files", "*"},
 };
+const SDL_DialogFileFilter kPresetFilter[] = {{"glic-studio preset", "json"}};
 const SDL_DialogFileFilter kPngFilter[] = {{"PNG image", "png"}};
 
 struct ClipboardPng {
@@ -102,11 +105,16 @@ std::string Platform::videoDriver() const {
 
 void Platform::showOpenImageDialog() {
     SDL_ShowOpenFileDialog(dialogCallback, new DialogContext{this, AppEventKind::OpenFile}, window_, kImageFilters,
-                           2, nullptr, false);
+                           4, nullptr, false);
 }
 
 void Platform::showSavePngDialog(const std::string& suggestedName) {
     SDL_ShowSaveFileDialog(dialogCallback, new DialogContext{this, AppEventKind::SaveFile}, window_, kPngFilter, 1,
+                           suggestedName.empty() ? nullptr : suggestedName.c_str());
+}
+
+void Platform::showSavePresetDialog(const std::string& suggestedName) {
+    SDL_ShowSaveFileDialog(dialogCallback, new DialogContext{this, AppEventKind::SavePreset}, window_, kPresetFilter, 1,
                            suggestedName.empty() ? nullptr : suggestedName.c_str());
 }
 

@@ -5,6 +5,7 @@
 
 #include <glic/image_io.hpp>
 
+#include "preset.hpp"
 #include "spec.hpp"
 
 #include <SDL3/SDL_opengl.h>
@@ -13,6 +14,8 @@
 #include <imgui_impl_sdl3.h>
 
 #include <chrono>
+#include <cstdlib>
+#include <filesystem>
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -26,6 +29,8 @@ struct Options {
     std::string view;
     std::string tab;
     std::string capture;  // write a screenshot once a full render is shown, then exit
+    std::string preset;
+    std::string exportPng;  // export the full render (with preset) once shown, then exit
     int width = 0, height = 0;
 };
 
@@ -33,12 +38,14 @@ void usage() {
     std::puts(
         "glic-studio [image]\n"
         "  --open FILE        open an image at start\n"
+        "  --preset FILE      load a preset (.json, or a PNG exported by glic-studio)\n"
         "  --spec \"k=v ...\"   initial encode settings (same keys as `glic encode --spec`)\n"
         "  --decode \"k=v ...\" unlink decoding and set these decode-side values\n"
         "  --view MODE        glitched | original | split | difference\n"
         "  --tab NAME         settings tab to show: encode | decode\n"
         "  --size WxH         initial window size in points\n"
-        "  --capture OUT.png  screenshot the window once a full render is on screen, then exit");
+        "  --capture OUT.png  screenshot the window once a full render is on screen, then exit\n"
+        "  --export OUT.png   export the full render (preset embedded) once it is on screen, then exit");
 }
 
 bool parse(int argc, char** argv, Options& o) {
@@ -56,6 +63,8 @@ bool parse(int argc, char** argv, Options& o) {
         else if (a == "--view") { if (!next(o.view)) return false; }
         else if (a == "--tab") { if (!next(o.tab)) return false; }
         else if (a == "--capture") { if (!next(o.capture)) return false; }
+        else if (a == "--preset") { if (!next(o.preset)) return false; }
+        else if (a == "--export") { if (!next(o.exportPng)) return false; }
         else if (a == "--size") {
             if (!next(v) || std::sscanf(v.c_str(), "%dx%d", &o.width, &o.height) != 2) return false;
         } else if (a == "-h" || a == "--help") { return false; }
@@ -63,6 +72,19 @@ bool parse(int argc, char** argv, Options& o) {
         else return false;
     }
     return true;
+}
+
+// Where bundled presets live: $GLIC_STUDIO_PRESETS, next to an installed
+// binary (../share/glic-studio/presets), or the source tree for dev builds.
+std::vector<std::string> presetDirs(const char* argv0) {
+    std::vector<std::string> dirs;
+    if (const char* env = std::getenv("GLIC_STUDIO_PRESETS")) dirs.push_back(env);
+    std::error_code ec;
+    auto exe = std::filesystem::canonical("/proc/self/exe", ec);
+    if (ec) exe = std::filesystem::absolute(argv0, ec);
+    dirs.push_back((exe.parent_path().parent_path() / "share/glic-studio/presets").string());
+    dirs.push_back(GLIC_STUDIO_SOURCE_DIR "/presets");
+    return dirs;
 }
 
 void applyStyle(float scale) {
@@ -127,6 +149,21 @@ int main(int argc, char** argv) {
     int exitCode = 0;
     {
         studio::App app(platform);
+        app.setBundledPresetDirs(presetDirs(argv[0]));
+        if (!opt.preset.empty()) {
+            if (std::filesystem::path(opt.preset).extension() == ".json") {
+                if (!app.loadPresetFile(opt.preset)) return 1;
+            } else {
+                auto bytes = glic::readFile(opt.preset);
+                std::string err;
+                auto p = bytes ? glic::preset::fromPng(*bytes, &err) : std::nullopt;
+                if (!p) {
+                    std::fprintf(stderr, "--preset: %s\n", err.c_str());
+                    return 1;
+                }
+                app.applyPreset(*p, opt.preset);
+            }
+        }
         if (!opt.spec.empty()) {
             glic::EncodeSettings s;
             if (auto err = glic::applySpec(s, opt.spec); !err.empty()) {
@@ -156,7 +193,7 @@ int main(int argc, char** argv) {
         while (!app.quitRequested()) {
             int timeout = app.idleTimeoutMs();
             // Capture mode must keep drawing without input events.
-            if (!opt.capture.empty() && (timeout < 0 || timeout > 20)) timeout = 20;
+            if ((!opt.capture.empty() || !opt.exportPng.empty()) && (timeout < 0 || timeout > 20)) timeout = 20;
             auto events = platform.waitEvents(timeout, [&](const SDL_Event& e) {
                 ImGui_ImplSDL3_ProcessEvent(&e);
                 if (e.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
@@ -177,6 +214,12 @@ int main(int argc, char** argv) {
             glClear(GL_COLOR_BUFFER_BIT);
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
+            if (!opt.exportPng.empty() && app.fullRenderShown()) {
+                bool ok = app.exportTo(opt.exportPng);
+                std::fprintf(stderr, "glic-studio: %s %s\n", ok ? "exported" : "FAILED to export", opt.exportPng.c_str());
+                exitCode = ok ? 0 : 2;
+                break;
+            }
             if (!opt.capture.empty()) {
                 if (captureCountdown < 0 && app.fullRenderShown()) captureCountdown = 3;  // let layout settle
                 if (captureCountdown > 0 && --captureCountdown == 0) {

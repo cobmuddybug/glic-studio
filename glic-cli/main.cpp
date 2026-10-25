@@ -3,9 +3,13 @@
 #include <glic/glic.hpp>
 #include <glic/image_io.hpp>
 
+#include "png_meta.hpp"
+#include "preset.hpp"
 #include "spec.hpp"
 
+#include <algorithm>
 #include <iostream>
+#include <optional>
 #include <string>
 
 using namespace glic;
@@ -17,8 +21,13 @@ void usage() {
         R"(glic - GLIC (GLitch Image Codec) encoder/decoder
 
 Usage:
+  glic render <in.png> <out.png> --preset <preset.json>   encode + decode, preset embedded in the PNG
   glic encode <in.png> <out.glic> [options]
-  glic decode <in.glic> <out.png> [--seed N] [--override "<spec>"]
+  glic decode <in.glic> <out.png> [--seed N] [--override "<spec>"] [--preset <preset.json>]
+
+A preset (glic-studio JSON, or a PNG exported by glic-studio) gives exactly the
+GUI's output. With encode, --preset sets the encode settings (later --spec/--seed
+apply on top); with decode, it sets the decode override and seed.
 
 Encode options (per-channel values: one value, or three comma-separated):
   --spec "<key=value ...>"   settings as key=value pairs (see below)
@@ -52,12 +61,81 @@ Example:
 )";
 }
 
+// A preset from a .json file, or embedded in a PNG exported by glic-studio.
+std::optional<preset::Preset> loadAnyPreset(const std::string& path, std::string& err) {
+    auto bytes = readFile(path);
+    if (!bytes) {
+        err = "cannot read " + path;
+        return std::nullopt;
+    }
+    if (png::isPng(*bytes)) return preset::fromPng(*bytes, &err);
+    return preset::parse(std::string(bytes->begin(), bytes->end()), &err);
+}
+
+int renderCommand(const std::string& input, const std::string& output, int argc, char* argv[]) {
+    std::optional<preset::Preset> p;
+    for (int i = 4; i < argc; i++) {
+        std::string a = argv[i];
+        if (a == "--preset" && i + 1 < argc) {
+            std::string err;
+            p = loadAnyPreset(argv[++i], err);
+            if (!p) {
+                std::cerr << "Error: " << err << "\n";
+                return 1;
+            }
+        } else {
+            std::cerr << "Unknown option: " << a << "\n";
+            return 1;
+        }
+    }
+    if (!p) {
+        std::cerr << "Error: render needs --preset\n";
+        return 1;
+    }
+    std::string loadError;
+    auto image = loadImage(input, &loadError);
+    if (!image) {
+        std::cerr << "Error: failed to load " << input << ": " << loadError << "\n";
+        return 1;
+    }
+    auto result = preset::render(*image, *p);
+    if (!result.ok) {
+        std::cerr << "Error: " << result.error << "\n";
+        return 1;
+    }
+    // Same as the GUI's export: cropped to the source size, preset embedded.
+    glic::Image out = result.image;
+    if (out.width != image->width || out.height != image->height) {
+        glic::Image c;
+        c.width = std::min(image->width, out.width);
+        c.height = std::min(image->height, out.height);
+        for (int y = 0; y < c.height; y++)
+            c.pixels.insert(c.pixels.end(), out.pixels.begin() + static_cast<size_t>(y) * out.width,
+                            out.pixels.begin() + static_cast<size_t>(y) * out.width + c.width);
+        out = std::move(c);
+    }
+    if (!writeFile(output, preset::exportPng(out, *p))) {
+        std::cerr << "Error: failed to write " << output << "\n";
+        return 1;
+    }
+    std::cout << "Rendered " << out.width << "x" << out.height << " to " << output << "\n";
+    return 0;
+}
+
 int encodeCommand(const std::string& input, const std::string& output, int argc, char* argv[]) {
     EncodeSettings settings;
     std::string spec;
     for (int i = 4; i < argc; i++) {
         std::string a = argv[i];
-        if (a == "--glic-defaults") {
+        if (a == "--preset" && i + 1 < argc) {
+            std::string err;
+            auto p = loadAnyPreset(argv[++i], err);
+            if (!p) {
+                std::cerr << "Error: " << err << "\n";
+                return 1;
+            }
+            settings = p->encode;
+        } else if (a == "--glic-defaults") {
             int64_t seed = settings.seed;
             settings = glicCodecConfigDefaults();
             settings.seed = seed;
@@ -112,6 +190,14 @@ int decodeCommand(const std::string& input, const std::string& output, int argc,
                 return 1;
             }
             ds.override = paramsFromSettings(s);
+        } else if (a == "--preset" && i + 1 < argc) {
+            std::string err;
+            auto p = loadAnyPreset(argv[++i], err);
+            if (!p) {
+                std::cerr << "Error: " << err << "\n";
+                return 1;
+            }
+            ds = preset::decodeSettings(*p);
         } else {
             std::cerr << "Unknown option: " << a << "\n";
             return 1;
@@ -138,6 +224,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     const std::string command = argv[1];
+    if (command == "render") return renderCommand(argv[2], argv[3], argc, argv);
     if (command == "encode") return encodeCommand(argv[2], argv[3], argc, argv);
     if (command == "decode") return decodeCommand(argv[2], argv[3], argc, argv);
     usage();

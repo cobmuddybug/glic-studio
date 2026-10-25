@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "5um7h1ng",
+  "source": "GLIC preset '5um7h1ng' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "LUV",
+    "border": [
+      129,
+      129,
+      129
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 256,
+        "threshold": 38.6875,
+        "prediction": "ANGLE",
+        "quantization": 0,
+        "clamp": "none",
+        "wavelet": -1,
+        "transform": "FWT",
+        "compression": 0.0,
+        "scale": 4159,
+        "encoding": "RAW"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

@@ -223,7 +223,18 @@ public class HarnessMain {
         if (!fk) w.print(", ");
         fk = false;
         Object v = e.getValue();
-        String vs = v instanceof Number || v instanceof Boolean ? v.toString() : quote(String.valueOf(v));
+        String vs;
+        if (v instanceof float[]) {
+          float[] a = (float[]) v;
+          StringBuilder sb = new StringBuilder("[");
+          for (int i = 0; i < a.length; i++) sb.append(i > 0 ? ", " : "").append(a[i]);
+          vs = sb.append("]").toString();
+        } else if (v instanceof Float) {
+          // Exact float32 value, as a decimal that round-trips.
+          vs = Float.toString((Float) v);
+        } else {
+          vs = v instanceof Number || v instanceof Boolean ? v.toString() : quote(String.valueOf(v));
+        }
         w.print(quote(e.getKey()) + ": " + vs);
       }
       w.print("}");

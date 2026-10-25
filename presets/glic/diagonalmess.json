@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "diagonalmess",
+  "source": "GLIC preset 'diagonalmess' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "RGB",
+    "border": [
+      162,
+      128,
+      210
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 4,
+        "threshold": 5.0,
+        "prediction": "TRUEMOTION",
+        "quantization": 31,
+        "clamp": "none",
+        "wavelet": 64,
+        "transform": "WPT",
+        "compression": 55.25,
+        "scale": 16777216,
+        "encoding": "RAW"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

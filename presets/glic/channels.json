@@ -1,0 +1,59 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "channels",
+  "source": "GLIC preset 'channels' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "R-GGB-G",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 64,
+        "max_block": 256,
+        "threshold": 15.0,
+        "prediction": "PAETH",
+        "quantization": 0,
+        "clamp": "none",
+        "wavelet": 5,
+        "transform": "FWT",
+        "compression": 79.33333587646484,
+        "scale": 23,
+        "encoding": "PACKED"
+      },
+      {
+        "min_block": 4,
+        "max_block": 16,
+        "threshold": 15.0,
+        "prediction": "H",
+        "quantization": 14,
+        "clamp": "none",
+        "wavelet": 9,
+        "transform": "FWT",
+        "compression": 0.0,
+        "scale": 71,
+        "encoding": "PACKED"
+      },
+      {
+        "min_block": 2,
+        "max_block": 512,
+        "threshold": 35.625,
+        "prediction": "HV",
+        "quantization": 32,
+        "clamp": "none",
+        "wavelet": 13,
+        "transform": "FWT",
+        "compression": 65.16667175292969,
+        "scale": 14,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

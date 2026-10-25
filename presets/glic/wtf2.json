@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "wtf2",
+  "source": "GLIC preset 'wtf2' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "OHTA",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 32,
+        "threshold": 5.0,
+        "prediction": "LDIAG",
+        "quantization": 14,
+        "clamp": "none",
+        "wavelet": 65,
+        "transform": "FWT",
+        "compression": 24.08333396911621,
+        "scale": 233,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

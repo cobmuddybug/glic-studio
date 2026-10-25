@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "jpegls1",
+  "source": "GLIC preset 'jpegls1' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "OHTA",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 64,
+        "max_block": 512,
+        "threshold": 15.0,
+        "prediction": "JPEGLS",
+        "quantization": 233,
+        "clamp": "mod256",
+        "wavelet": 41,
+        "transform": "FWT",
+        "compression": 208.25,
+        "scale": 13619,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "haze2",
+  "source": "GLIC preset 'haze2' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "XYZ",
+    "border": [
+      112,
+      128,
+      136
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 128,
+        "threshold": 5.0,
+        "prediction": "DC",
+        "quantization": 0,
+        "clamp": "none",
+        "wavelet": 63,
+        "transform": "FWT",
+        "compression": 0.0,
+        "scale": 4,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

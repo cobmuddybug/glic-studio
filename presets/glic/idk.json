@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "idk",
+  "source": "GLIC preset 'idk' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "HSB",
+    "border": [
+      129,
+      129,
+      129
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 512,
+        "threshold": 15.0,
+        "prediction": "ANGLE",
+        "quantization": 0,
+        "clamp": "none",
+        "wavelet": 64,
+        "transform": "RANDOM",
+        "compression": 0.0,
+        "scale": 2964,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

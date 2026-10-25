@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "black+whiteblockyglitch",
+  "source": "GLIC preset 'black+whiteblockyglitch' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "Greyscale",
+    "border": [
+      127,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 64,
+        "threshold": 5.0,
+        "prediction": "TRUEMOTION",
+        "quantization": 1,
+        "clamp": "mod256",
+        "wavelet": 17,
+        "transform": "FWT",
+        "compression": 113.33333587646484,
+        "scale": 8518822,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "ayy",
+  "source": "GLIC preset 'ayy' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "CMY",
+    "border": [
+      150,
+      255,
+      76
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 4,
+        "max_block": 256,
+        "threshold": 15.0,
+        "prediction": "REF",
+        "quantization": 0,
+        "clamp": "none",
+        "wavelet": 0,
+        "transform": "FWT",
+        "compression": 0.0,
+        "scale": 1048576,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

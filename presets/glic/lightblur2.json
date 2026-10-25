@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "lightblur2",
+  "source": "GLIC preset 'lightblur2' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "OHTA",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 8,
+        "threshold": 9.59375,
+        "prediction": "LDIAG",
+        "quantization": 120,
+        "clamp": "none",
+        "wavelet": 8,
+        "transform": "FWT",
+        "compression": 167.1666717529297,
+        "scale": 233,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

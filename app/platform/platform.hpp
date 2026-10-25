@@ -36,6 +36,7 @@ public:
     // Asynchronous dialogs; the result comes back as an AppEvent.
     void showOpenImageDialog();
     void showSavePngDialog(const std::string& suggestedName);
+    void showSavePresetDialog(const std::string& suggestedName);
 
     // Places a PNG on the clipboard (image/png).
     bool copyPngToClipboard(std::vector<uint8_t> png);

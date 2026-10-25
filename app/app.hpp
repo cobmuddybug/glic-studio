@@ -5,9 +5,12 @@
 #include "render/texture.hpp"
 #include "render/worker.hpp"
 
+#include "preset.hpp"
+
 #include <glic/glic.hpp>
 
 #include <future>
+#include <vector>
 #include <memory>
 #include <optional>
 #include <string>
@@ -49,6 +52,16 @@ public:
     bool quitRequested() const { return quit_; }
 
     void openImage(const std::string& path);
+    // Opens a path: a preset (.json), a PNG with an embedded preset (asks), or an image.
+    void openPath(const std::string& path);
+
+    // Presets (design §5). The current state as a preset, and back.
+    glic::preset::Preset currentPreset() const;
+    void applyPreset(const glic::preset::Preset& p, const std::string& origin);
+    bool loadPresetFile(const std::string& path);
+    void setBundledPresetDirs(std::vector<std::string> dirs);
+    // Writes the full render with the preset embedded; for --export.
+    bool exportTo(const std::string& path);
     void setSettings(const glic::EncodeSettings& s);
     const glic::EncodeSettings& settings() const { return settings_; }
 
@@ -83,7 +96,10 @@ private:
     void statusBar(float height);
     void runAction(int action);
     void requestExport();
-    void finishExport();
+    bool finishExport();
+    void savePreset(const std::string& path);
+    void presetsMenu();
+    void embeddedPresetBar();
     void copyToClipboard();
     glic::Image croppedShown() const;
     double nowMs() const;
@@ -110,6 +126,17 @@ private:
     CanvasView view_;
 
     std::string exportPath_;  // set while an export waits for its full render
+
+    // Preset identity: name and the loaded document (unknown fields survive a save).
+    std::string presetName_;
+    nlohmann::json presetDocument_ = nlohmann::json::object();
+    struct BundledPreset {
+        std::string name, path;
+    };
+    std::vector<std::pair<std::string, std::vector<BundledPreset>>> bundled_;  // (group, presets)
+    // A dropped PNG that carries a preset: ask what to do with it.
+    std::optional<glic::preset::Preset> pendingEmbedded_;
+    std::string pendingEmbeddedPath_;
     std::string status_;
     bool statusError_ = false;
     double statusAt_ = 0;

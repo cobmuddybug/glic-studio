@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "n07h1ng2c-2",
+  "source": "GLIC preset 'n07h1ng2c-2' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "XYZ",
+    "border": [
+      129,
+      129,
+      129
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 64,
+        "threshold": 7.450000286102295,
+        "prediction": "REF",
+        "quantization": 0,
+        "clamp": "none",
+        "wavelet": 64,
+        "transform": "FWT",
+        "compression": 0.0,
+        "scale": 592,
+        "encoding": "RAW"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

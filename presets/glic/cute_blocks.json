@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "cute blocks",
+  "source": "GLIC preset 'cute blocks' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "XYZ",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 4,
+        "max_block": 256,
+        "threshold": 15.0,
+        "prediction": "PAETH",
+        "quantization": 39,
+        "clamp": "none",
+        "wavelet": 8,
+        "transform": "FWT",
+        "compression": 47.60000228881836,
+        "scale": 61,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

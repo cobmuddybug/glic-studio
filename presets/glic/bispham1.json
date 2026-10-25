@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "bispham1",
+  "source": "GLIC preset 'bispham1' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "CMY",
+    "border": [
+      76,
+      183,
+      154
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 32,
+        "max_block": 256,
+        "threshold": 46.34375,
+        "prediction": "ANGLE",
+        "quantization": 255,
+        "clamp": "mod256",
+        "wavelet": 66,
+        "transform": "FWT",
+        "compression": 126.08333587646484,
+        "scale": 764,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

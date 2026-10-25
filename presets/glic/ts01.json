@@ -1,0 +1,59 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "ts01",
+  "source": "GLIC preset 'ts01' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "HWB",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 8,
+        "max_block": 64,
+        "threshold": 15.0,
+        "prediction": "BSAD",
+        "quantization": 100,
+        "clamp": "mod256",
+        "wavelet": 45,
+        "transform": "WPT",
+        "compression": 46.75,
+        "scale": 39,
+        "encoding": "RLE"
+      },
+      {
+        "min_block": 4,
+        "max_block": 256,
+        "threshold": 24.906251907348633,
+        "prediction": "H",
+        "quantization": 120,
+        "clamp": "mod256",
+        "wavelet": 0,
+        "transform": "WPT",
+        "compression": 0.0,
+        "scale": 1042137,
+        "encoding": "RLE"
+      },
+      {
+        "min_block": 4,
+        "max_block": 256,
+        "threshold": 23.375,
+        "prediction": "V",
+        "quantization": 202,
+        "clamp": "mod256",
+        "wavelet": 0,
+        "transform": "FWT",
+        "compression": 0.0,
+        "scale": 312946,
+        "encoding": "RLE"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

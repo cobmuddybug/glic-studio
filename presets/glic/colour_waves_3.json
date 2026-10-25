@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "colour_waves_3",
+  "source": "GLIC preset 'colour_waves_3' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "RGB",
+    "border": [
+      129,
+      128,
+      126
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 2,
+        "threshold": 147.40625,
+        "prediction": "PAETH",
+        "quantization": 0,
+        "clamp": "mod256",
+        "wavelet": 64,
+        "transform": "FWT",
+        "compression": 0.0,
+        "scale": 6353,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

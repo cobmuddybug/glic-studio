@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "brokens7r1p3z",
+  "source": "GLIC preset 'brokens7r1p3z' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "LUV",
+    "border": [
+      128,
+      126,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 32,
+        "max_block": 256,
+        "threshold": 78.5,
+        "prediction": "LDIAG",
+        "quantization": 8,
+        "clamp": "mod256",
+        "wavelet": 41,
+        "transform": "FWT",
+        "compression": 77.91666412353516,
+        "scale": 6070285,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "wat",
+  "source": "GLIC preset 'wat' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "XYZ",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 512,
+        "threshold": 29.5,
+        "prediction": "HV",
+        "quantization": 0,
+        "clamp": "none",
+        "wavelet": 8,
+        "transform": "FWT",
+        "compression": 147.33334350585938,
+        "scale": 181,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

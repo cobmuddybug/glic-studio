@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "lmao",
+  "source": "GLIC preset 'lmao' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "XYZ",
+    "border": [
+      138,
+      111,
+      90
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 4,
+        "max_block": 256,
+        "threshold": 15.0,
+        "prediction": "RANDOM",
+        "quantization": 255,
+        "clamp": "none",
+        "wavelet": 0,
+        "transform": "RANDOM",
+        "compression": 0.0,
+        "scale": 1048576,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

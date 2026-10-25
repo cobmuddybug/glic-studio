@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "constrctivist_minimal",
+  "source": "GLIC preset 'constrctivist_minimal' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "RGB",
+    "border": [
+      112,
+      128,
+      136
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 4,
+        "max_block": 32,
+        "threshold": 15.71875,
+        "prediction": "PAETH",
+        "quantization": 0,
+        "clamp": "none",
+        "wavelet": 65,
+        "transform": "FWT",
+        "compression": 26.91666603088379,
+        "scale": 16777216,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

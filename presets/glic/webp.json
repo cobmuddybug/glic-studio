@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "webp",
+  "source": "GLIC preset 'webp' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "LUV",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 16,
+        "threshold": 8.062500953674316,
+        "prediction": "DIFF",
+        "quantization": 0,
+        "clamp": "none",
+        "wavelet": 65,
+        "transform": "FWT",
+        "compression": 11.333333969116211,
+        "scale": 16777216,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

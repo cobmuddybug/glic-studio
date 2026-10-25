@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "confetti",
+  "source": "GLIC preset 'confetti' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "YXY",
+    "border": [
+      128,
+      128,
+      132
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 4,
+        "max_block": 16,
+        "threshold": 29.5,
+        "prediction": "RANDOM",
+        "quantization": 100,
+        "clamp": "none",
+        "wavelet": 18,
+        "transform": "FWT",
+        "compression": 0.0,
+        "scale": 1048576,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

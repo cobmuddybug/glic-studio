@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "erase_horizontal",
+  "source": "GLIC preset 'erase_horizontal' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "XYZ",
+    "border": [
+      112,
+      128,
+      136
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 128,
+        "threshold": 5.0,
+        "prediction": "H",
+        "quantization": 0,
+        "clamp": "none",
+        "wavelet": 63,
+        "transform": "FWT",
+        "compression": 38.25,
+        "scale": 16777216,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

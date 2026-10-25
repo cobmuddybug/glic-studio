@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "3255",
+  "source": "GLIC preset '3255' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "HSB",
+    "border": [
+      154,
+      193,
+      181
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 8,
+        "max_block": 256,
+        "threshold": 69.31250762939453,
+        "prediction": "SAD",
+        "quantization": 116,
+        "clamp": "none",
+        "wavelet": 5,
+        "transform": "WPT",
+        "compression": 153.0,
+        "scale": 204883,
+        "encoding": "RAW"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

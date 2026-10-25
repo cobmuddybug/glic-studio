@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "sk0011rgb",
+  "source": "GLIC preset 'sk0011rgb' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "RGB",
+    "border": [
+      112,
+      231,
+      195
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 4,
+        "max_block": 256,
+        "threshold": 158.125,
+        "prediction": "LDIAG",
+        "quantization": 100,
+        "clamp": "mod256",
+        "wavelet": -1,
+        "transform": "FWT",
+        "compression": 138.8333282470703,
+        "scale": 1024626,
+        "encoding": "RLE"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

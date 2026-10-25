@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "sk0021xyz",
+  "source": "GLIC preset 'sk0021xyz' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "XYZ",
+    "border": [
+      128,
+      228,
+      220
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 16,
+        "max_block": 256,
+        "threshold": 130.5625,
+        "prediction": "HV",
+        "quantization": 96,
+        "clamp": "mod256",
+        "wavelet": 42,
+        "transform": "WPT",
+        "compression": 82.16667175292969,
+        "scale": 1048576,
+        "encoding": "RAW"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

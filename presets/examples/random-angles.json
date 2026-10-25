@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "random angles",
+  "description": "RANDOM predictor per block in YUV, run-length encoded",
+  "encode": {
+    "colorspace": "YUV",
+    "border": [
+      60,
+      20,
+      90
+    ],
+    "seed": 7,
+    "channels": [
+      {
+        "min_block": 4,
+        "max_block": 256,
+        "threshold": 15,
+        "prediction": "RANDOM",
+        "quantization": 120,
+        "clamp": "none",
+        "wavelet": "NONE",
+        "transform": "FWT",
+        "compression": 0,
+        "scale": 1048576,
+        "encoding": "RLE"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

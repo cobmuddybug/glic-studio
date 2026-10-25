@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "1ns1t3",
+  "source": "GLIC preset '1ns1t3' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "HSB",
+    "border": [
+      129,
+      129,
+      129
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 4,
+        "max_block": 256,
+        "threshold": 15.0,
+        "prediction": "ANGLE",
+        "quantization": 0,
+        "clamp": "none",
+        "wavelet": -1,
+        "transform": "FWT",
+        "compression": 0.0,
+        "scale": 16777216,
+        "encoding": "RAW"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

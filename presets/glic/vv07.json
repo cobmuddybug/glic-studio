@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "vv07",
+  "source": "GLIC preset 'vv07' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "LUV",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 16,
+        "max_block": 16,
+        "threshold": 17.25,
+        "prediction": "JPEGLS",
+        "quantization": 167,
+        "clamp": "mod256",
+        "wavelet": 0,
+        "transform": "FWT",
+        "compression": 2.8333334922790527,
+        "scale": 403503,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

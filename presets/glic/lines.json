@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "lines",
+  "source": "GLIC preset 'lines' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "CMY",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 512,
+        "threshold": 12.65625,
+        "prediction": "H",
+        "quantization": 41,
+        "clamp": "none",
+        "wavelet": 3,
+        "transform": "FWT",
+        "compression": 18.416667938232422,
+        "scale": 50,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

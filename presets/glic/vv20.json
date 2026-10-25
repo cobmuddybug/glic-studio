@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "vv20",
+  "source": "GLIC preset 'vv20' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "LUV",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 8,
+        "max_block": 8,
+        "threshold": 159.65625,
+        "prediction": "V",
+        "quantization": 131,
+        "clamp": "none",
+        "wavelet": 40,
+        "transform": "WPT",
+        "compression": 0.0,
+        "scale": 544,
+        "encoding": "RLE"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

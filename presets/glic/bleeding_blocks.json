@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "bleeding_blocks",
+  "source": "GLIC preset 'bleeding_blocks' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "RGB",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 64,
+        "threshold": 38.6875,
+        "prediction": "DIFF",
+        "quantization": 211,
+        "clamp": "none",
+        "wavelet": 25,
+        "transform": "FWT",
+        "compression": 35.41666793823242,
+        "scale": 3821,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

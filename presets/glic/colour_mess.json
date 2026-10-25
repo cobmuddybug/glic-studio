@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "colour_mess",
+  "source": "GLIC preset 'colour_mess' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "RGB",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 512,
+        "threshold": 7.2050018310546875,
+        "prediction": "LDIAG",
+        "quantization": 160,
+        "clamp": "none",
+        "wavelet": 65,
+        "transform": "FWT",
+        "compression": 77.91666412353516,
+        "scale": 16777216,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "cubism",
+  "source": "GLIC preset 'cubism' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "XYZ",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 16,
+        "max_block": 256,
+        "threshold": 15.0,
+        "prediction": "LDIAG",
+        "quantization": 97,
+        "clamp": "mod256",
+        "wavelet": 36,
+        "transform": "FWT",
+        "compression": 252.1666717529297,
+        "scale": 87,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

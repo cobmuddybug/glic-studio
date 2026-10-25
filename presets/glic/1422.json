@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "1422",
+  "source": "GLIC preset '1422' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "RGB",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 4,
+        "max_block": 256,
+        "threshold": 69.31250762939453,
+        "prediction": "CORNER",
+        "quantization": 104,
+        "clamp": "none",
+        "wavelet": 7,
+        "transform": "RANDOM",
+        "compression": 93.5,
+        "scale": 1048576,
+        "encoding": "RLE"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

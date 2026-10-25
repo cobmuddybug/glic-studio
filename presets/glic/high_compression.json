@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "high_compression",
+  "source": "GLIC preset 'high_compression' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "YXY",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 8,
+        "max_block": 256,
+        "threshold": 15.0,
+        "prediction": "NONE",
+        "quantization": 0,
+        "clamp": "none",
+        "wavelet": 17,
+        "transform": "WPT",
+        "compression": 162.9166717529297,
+        "scale": 140,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

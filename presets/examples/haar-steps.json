@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "haar steps",
+  "description": "Haar wavelet with heavy quantization: soft blocky steps",
+  "encode": {
+    "colorspace": "RGB",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 4,
+        "max_block": 256,
+        "threshold": 15,
+        "prediction": "AVG",
+        "quantization": 60,
+        "clamp": "none",
+        "wavelet": "Haar",
+        "transform": "FWT",
+        "compression": 0,
+        "scale": 1048576,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

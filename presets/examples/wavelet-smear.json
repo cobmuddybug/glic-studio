@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "wavelet smear",
+  "description": "Daubechies 4 at a low scale with magnitude compression smears detail",
+  "encode": {
+    "colorspace": "LAB",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 4,
+        "max_block": 256,
+        "threshold": 15,
+        "prediction": "AVG",
+        "quantization": 0,
+        "clamp": "none",
+        "wavelet": "Daubechies 4",
+        "transform": "FWT",
+        "compression": 80,
+        "scale": 256,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

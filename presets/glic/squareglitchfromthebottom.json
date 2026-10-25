@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "squareglitchfromthebottom",
+  "source": "GLIC preset 'squareglitchfromthebottom' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "RGB",
+    "border": [
+      126,
+      128,
+      127
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 8,
+        "threshold": 27.96875,
+        "prediction": "TRUEMOTION",
+        "quantization": 76,
+        "clamp": "mod256",
+        "wavelet": 42,
+        "transform": "WPT",
+        "compression": 4.25,
+        "scale": 16777216,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

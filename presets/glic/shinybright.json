@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "shinybright",
+  "source": "GLIC preset 'shinybright' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "HSB",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 16,
+        "max_block": 128,
+        "threshold": 9.59375,
+        "prediction": "LDIAG",
+        "quantization": 0,
+        "clamp": "mod256",
+        "wavelet": 63,
+        "transform": "FWT",
+        "compression": 0.0,
+        "scale": 16777216,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

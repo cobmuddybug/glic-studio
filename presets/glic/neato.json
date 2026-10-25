@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "neato",
+  "source": "GLIC preset 'neato' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "R-GGB-G",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 4,
+        "max_block": 64,
+        "threshold": 21.84375,
+        "prediction": "DC",
+        "quantization": 41,
+        "clamp": "none",
+        "wavelet": 47,
+        "transform": "WPT",
+        "compression": 0.0,
+        "scale": 181,
+        "encoding": "RLE"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

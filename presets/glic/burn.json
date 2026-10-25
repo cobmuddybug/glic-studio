@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "burn",
+  "source": "GLIC preset 'burn' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "LUV",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 4,
+        "max_block": 8,
+        "threshold": 15.0,
+        "prediction": "TRUEMOTION",
+        "quantization": 180,
+        "clamp": "mod256",
+        "wavelet": 0,
+        "transform": "FWT",
+        "compression": 0.0,
+        "scale": 1048576,
+        "encoding": "RLE"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

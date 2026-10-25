@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "wavydownbigger",
+  "source": "GLIC preset 'wavydownbigger' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "RGB",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 4,
+        "threshold": 21.84375,
+        "prediction": "JPEGLS",
+        "quantization": 0,
+        "clamp": "none",
+        "wavelet": 16,
+        "transform": "FWT",
+        "compression": 2.8333334922790527,
+        "scale": 11,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

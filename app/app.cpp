@@ -9,12 +9,15 @@
 
 #include <glic/image_io.hpp>
 
+#include "png_meta.hpp"
+
 #include <imgui.h>
 #include <imgui_internal.h>
 
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cctype>
 #include <filesystem>
 
 namespace studio {
@@ -72,7 +75,10 @@ void App::handle(const AppEvent& e) {
     case AppEventKind::Quit: quit_ = true; break;
     case AppEventKind::OpenFile:
     case AppEventKind::DropFile:
-        if (!e.path.empty()) openImage(e.path);
+        if (!e.path.empty()) openPath(e.path);
+        break;
+    case AppEventKind::SavePreset:
+        if (!e.path.empty()) savePreset(e.path);
         break;
     case AppEventKind::SaveFile:
         if (e.path.empty()) break;
@@ -89,6 +95,155 @@ void App::openImage(const std::string& path) {
     loadingPath_ = path;
     loading_ = std::async(std::launch::async, [path] { return glic::loadImage(path); });
     setStatus("Loading " + std::filesystem::path(path).filename().string() + "...");
+}
+
+void App::openPath(const std::string& path) {
+    namespace fs = std::filesystem;
+    std::string ext = fs::path(path).extension().string();
+    for (auto& ch : ext) ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+    if (ext == ".json") {
+        loadPresetFile(path);
+        return;
+    }
+    if (ext == ".png") {
+        if (auto bytes = glic::readFile(path); bytes && glic::png::readText(*bytes, glic::preset::kPngKeyword)) {
+            std::string err;
+            if (auto p = glic::preset::fromPng(*bytes, &err)) {
+                pendingEmbedded_ = std::move(*p);
+                pendingEmbeddedPath_ = path;
+                return;  // the canvas shows a bar asking what to do
+            }
+            setStatus("Embedded preset unreadable (" + err + "); opening as an image", true);
+        }
+    }
+    openImage(path);
+}
+
+glic::preset::Preset App::currentPreset() const {
+    glic::preset::Preset p;
+    p.name = presetName_;
+    p.document = presetDocument_;
+    p.encode = settings_;
+    p.decodeLinked = decodeLinked_;
+    if (decodeLinked_) {
+        p.decode = settings_;
+        for (auto& ch : p.decode.channels)
+            if (static_cast<int>(ch.prediction) < 0) ch.prediction = glic::Prediction::NONE;
+    } else {
+        p.decode = decodeSettings_;
+    }
+    p.decode.seed = settings_.seed;
+    return p;
+}
+
+void App::applyPreset(const glic::preset::Preset& p, const std::string& origin) {
+    presetName_ = p.name;
+    presetDocument_ = p.document;
+    settings_ = p.encode;
+    linkChannels_ = channelsIdentical(settings_);
+    decodeLinked_ = p.decodeLinked;
+    decodeSettings_ = p.decode;
+    decodeChannelsLinked_ = channelsIdentical(decodeSettings_);
+    setStatus("Preset " + (p.name.empty() ? origin : "\"" + p.name + "\"") + " loaded");
+    settingsChanged();
+}
+
+bool App::loadPresetFile(const std::string& path) {
+    std::string err;
+    auto p = glic::preset::load(path, &err);
+    if (!p) {
+        setStatus("Could not load preset: " + err, true);
+        return false;
+    }
+    if (p->name.empty()) p->name = std::filesystem::path(path).stem().string();
+    applyPreset(*p, std::filesystem::path(path).filename().string());
+    return true;
+}
+
+void App::savePreset(const std::string& path) {
+    std::string target = path;
+    if (std::filesystem::path(target).extension().empty()) target += ".json";
+    glic::preset::Preset p = currentPreset();
+    if (p.name.empty()) p.name = std::filesystem::path(target).stem().string();
+    if (glic::preset::save(target, p)) {
+        presetName_ = p.name;
+        setStatus("Saved preset " + std::filesystem::path(target).filename().string());
+    } else {
+        setStatus("Could not write " + target, true);
+    }
+}
+
+void App::setBundledPresetDirs(std::vector<std::string> dirs) {
+    namespace fs = std::filesystem;
+    bundled_.clear();
+    for (const auto& dir : dirs) {
+        std::error_code ec;
+        if (!fs::is_directory(dir, ec)) continue;
+        std::vector<std::pair<std::string, std::vector<BundledPreset>>> groups;
+        for (const auto& sub : fs::directory_iterator(dir, ec)) {
+            if (!sub.is_directory()) continue;
+            std::vector<BundledPreset> items;
+            for (const auto& f : fs::directory_iterator(sub.path(), ec))
+                if (f.path().extension() == ".json") items.push_back({f.path().stem().string(), f.path().string()});
+            std::sort(items.begin(), items.end(), [](const auto& a, const auto& b) { return a.name < b.name; });
+            if (!items.empty()) groups.emplace_back(sub.path().filename().string(), std::move(items));
+        }
+        std::sort(groups.begin(), groups.end(), [](const auto& a, const auto& b) {
+            // Hand-made examples first, then GLIC's originals.
+            auto rank = [](const std::string& g) { return g == "examples" ? 0 : g == "glic" ? 1 : 2; };
+            return rank(a.first) != rank(b.first) ? rank(a.first) < rank(b.first) : a.first < b.first;
+        });
+        if (!groups.empty()) {
+            bundled_ = std::move(groups);
+            return;  // first directory that has presets wins
+        }
+    }
+}
+
+void App::presetsMenu() {
+    if (!ImGui::BeginMenu("Presets")) return;
+    if (ImGui::MenuItem("Open preset...", shortcutLabel(Action::OpenImage))) platform_.showOpenImageDialog();
+    if (ImGui::MenuItem("Save preset...", shortcutLabel(Action::SavePreset))) runAction(static_cast<int>(Action::SavePreset));
+    if (!bundled_.empty()) ImGui::Separator();
+    for (const auto& [group, items] : bundled_) {
+        const char* label = group == "examples" ? "Examples" : group == "glic" ? "GLIC originals" : group.c_str();
+        if (ImGui::BeginMenu(label)) {
+            for (const auto& item : items)
+                if (ImGui::MenuItem(item.name.c_str())) loadPresetFile(item.path);
+            ImGui::EndMenu();
+        }
+    }
+    if (bundled_.empty()) ImGui::TextDisabled("(bundled presets not found)");
+    ImGui::EndMenu();
+}
+
+void App::embeddedPresetBar() {
+    if (!pendingEmbedded_) return;
+    const std::string file = std::filesystem::path(pendingEmbeddedPath_).filename().string();
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyleColorVec4(ImGuiCol_FrameBg));
+    ImGui::BeginChild("##embedded", ImVec2(0, 0), ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysUseWindowPadding);
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("%s contains a glic-studio preset%s%s%s.", file.c_str(), pendingEmbedded_->name.empty() ? "" : " (\"",
+                pendingEmbedded_->name.c_str(), pendingEmbedded_->name.empty() ? "" : "\")");
+    if (ImGui::Button("Load settings")) {
+        applyPreset(*pendingEmbedded_, file);
+        pendingEmbedded_.reset();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Load as source image")) {
+        openImage(pendingEmbeddedPath_);
+        pendingEmbedded_.reset();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Dismiss")) pendingEmbedded_.reset();
+    ImGui::EndChild();
+    ImGui::PopStyleColor();
+}
+
+bool App::exportTo(const std::string& path) {
+    if (!fullRenderShown()) return false;
+    exportPath_ = path;
+    return finishExport();
 }
 
 void App::setSettings(const glic::EncodeSettings& s) {
@@ -148,8 +303,7 @@ void App::pumpRender() {
         req.generation = job->ticket;
         req.source = source_;
         req.encode = settings_;
-        req.decode.seed = settings_.seed;
-        if (!decodeLinked_) req.decode.override = glic::paramsFromSettings(decodeSettings_);
+        req.decode = glic::preset::decodeSettings(currentPreset());
         req.proxy = job->proxy;
         req.proxyEdge = proxyEdge_;
         worker_.submit(std::move(req));
@@ -183,14 +337,16 @@ void App::requestExport() {
     platform_.showSavePngDialog(stem + "-glic.png");
 }
 
-void App::finishExport() {
+bool App::finishExport() {
     // Exports what the canvas shows: the full-resolution render, cropped to the
     // source size (GLIC's decoder pads sides below 64 px).
-    if (glic::saveImage(exportPath_, croppedShown()))
+    const bool ok = glic::writeFile(exportPath_, glic::preset::exportPng(croppedShown(), currentPreset()));
+    if (ok)
         setStatus("Exported " + std::filesystem::path(exportPath_).filename().string());
     else
         setStatus("Export failed: could not write " + exportPath_, true);
     exportPath_.clear();
+    return ok;
 }
 
 void App::copyToClipboard() {
@@ -216,6 +372,11 @@ void App::runAction(int a) {
     case Action::ZoomFit: view_.fit = true; break;
     case Action::Zoom100: zoomTo100(view_, fb); break;
     case Action::ToggleDecodeLink: setDecodeLinked(!decodeLinked_); break;
+    case Action::SavePreset: {
+        std::string stem = presetName_.empty() ? std::filesystem::path(sourcePath_).stem().string() : presetName_;
+        platform_.showSavePresetDialog((stem.empty() ? "preset" : stem) + ".json");
+        break;
+    }
     }
 }
 
@@ -261,6 +422,8 @@ void App::menuBar() {
         if (ImGui::MenuItem("Copy image", shortcutLabel(Action::CopyImage), false, shown_.valid))
             runAction(static_cast<int>(Action::CopyImage));
         ImGui::Separator();
+        if (ImGui::MenuItem("Save preset...", shortcutLabel(Action::SavePreset))) runAction(static_cast<int>(Action::SavePreset));
+        ImGui::Separator();
         if (ImGui::MenuItem("Quit")) quit_ = true;
         ImGui::EndMenu();
     }
@@ -278,6 +441,7 @@ void App::menuBar() {
         ImGui::MenuItem("Rearrange for window shape", nullptr, &autoArrange_);
         ImGui::EndMenu();
     }
+    presetsMenu();
     if (ImGui::BeginMenu("Decode")) {
         bool linked = decodeLinked_;
         if (ImGui::MenuItem("Linked to encode", shortcutLabel(Action::ToggleDecodeLink), &linked)) setDecodeLinked(linked);
@@ -416,6 +580,7 @@ void App::frame() {
             ci.glitchedV = static_cast<float>(shown_.encodedHeight) / shown_.image.height;
         }
         ci.framebufferScale = ImGui::GetIO().DisplayFramebufferScale.x;
+        embeddedPresetBar();
         drawCanvas(view_, ci, holdOriginal);
     }
     ImGui::End();

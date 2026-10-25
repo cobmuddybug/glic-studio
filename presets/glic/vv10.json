@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "vv10",
+  "source": "GLIC preset 'vv10' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "RGB",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 4,
+        "max_block": 4,
+        "threshold": 20.3125,
+        "prediction": "CORNER",
+        "quantization": 223,
+        "clamp": "mod256",
+        "wavelet": 0,
+        "transform": "WPT",
+        "compression": 12.75,
+        "scale": 1940,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

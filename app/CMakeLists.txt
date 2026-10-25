@@ -6,7 +6,7 @@ add_library(studio_core STATIC
     render/worker.cpp
 )
 target_include_directories(studio_core PUBLIC .)
-target_link_libraries(studio_core PUBLIC glic::glic)
+target_link_libraries(studio_core PUBLIC glic::glic glic_preset)
 find_package(Threads REQUIRED)
 target_link_libraries(studio_core PUBLIC Threads::Threads)
 target_compile_options(studio_core PRIVATE -Wall -Wextra)
@@ -48,6 +48,8 @@ add_executable(glic-studio
     ui/settings_panel.cpp
     ui/keybindings.cpp
 )
-target_link_libraries(glic-studio PRIVATE studio_core glic_cli_spec imgui SDL3::SDL3 OpenGL::GL)
+target_link_libraries(glic-studio PRIVATE studio_core glic_cli_spec glic_preset imgui SDL3::SDL3 OpenGL::GL)
+target_compile_definitions(glic-studio PRIVATE GLIC_STUDIO_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 target_compile_options(glic-studio PRIVATE -Wall -Wextra)
 install(TARGETS glic-studio RUNTIME DESTINATION bin)
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/presets/ DESTINATION share/glic-studio/presets FILES_MATCHING PATTERN "*.json")

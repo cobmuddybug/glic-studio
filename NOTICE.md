@@ -11,6 +11,11 @@ glic-studio is released under the **MIT License** (see `LICENSE`).
 
 The original is permissive, so glic-studio is MIT (design doc §0.1, first case).
 
+## Bundled presets
+
+`presets/glic/` holds GLIC's own presets (`third_party/GLIC/presets`, MIT, © 2017 GlitchCodec),
+converted to glic-studio JSON by `tools/convert_glic_presets.py`. `presets/examples/` are original.
+
 ## Third-party code in glic-studio
 
 | Component | Use | Licence |

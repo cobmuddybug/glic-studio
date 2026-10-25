@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "preset 38",
+  "source": "GLIC preset 'preset 38' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "HSB",
+    "border": [
+      129,
+      129,
+      129
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 2,
+        "threshold": 58.59375,
+        "prediction": "ANGLE",
+        "quantization": 63,
+        "clamp": "mod256",
+        "wavelet": -1,
+        "transform": "RANDOM",
+        "compression": 0.0,
+        "scale": 140,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

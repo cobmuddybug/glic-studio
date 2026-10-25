@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "chock-a-block",
+  "source": "GLIC preset 'chock-a-block' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "RGB",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 64,
+        "threshold": 50.9375,
+        "prediction": "HV",
+        "quantization": 41,
+        "clamp": "none",
+        "wavelet": 16,
+        "transform": "FWT",
+        "compression": 131.75,
+        "scale": 16777216,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

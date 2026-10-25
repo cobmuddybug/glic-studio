@@ -385,3 +385,21 @@ Per §11, where the code disagreed with the plan, the code won:
 - **Reuse**: the render worker caches the last encode, for proxy and full size separately, keyed
   on (source, encode settings). Decode-only changes skip encoding, and the status bar says
   "decode only". This is unit-tested.
+
+### Recorded during M3
+
+- **Preset format** (§5.1): field names follow GLIC's parameters (`colorspace`, `border`, `seed`,
+  per channel `min_block`, `max_block`, `threshold`, `prediction`, `quantization`, `clamp`,
+  `wavelet`, `transform`, `compression`, `scale`, `encoding`). Values can be names or GLIC ids.
+  A channel list with one entry applies to all three channels. `corruption` and `post_effects`
+  arrive with their milestones; until then they survive a save as unknown fields.
+- **Shared code**: `preset/` (`glic_preset`) is used by both the GUI and the CLI.
+  `preset::render` is the one encode + decode path, so `glic render IN OUT --preset P` and a GUI
+  export give the same bytes. `tools/check_gui_parity.sh` checks this with the real GUI.
+- **Embedded presets** (§5.3) are written as an iTXt chunk by a small PNG chunk reader/writer
+  (`png_meta.*`) instead of lodepng. The CLI's `--preset` also accepts such a PNG.
+- **Bundled presets**: `presets/examples/` are hand-made. `presets/glic/` holds GLIC's own 144
+  presets, converted from their Java-serialized slider values by `tools/convert_glic_presets.py`
+  (via the harness's `presets` command), following GLIC's `readValues()`.
+- **GUI flags**: `--preset FILE` and `--export OUT.png` (export once the full render is shown,
+  then exit) are used by the parity check.

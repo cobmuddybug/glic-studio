@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "wavydown",
+  "source": "GLIC preset 'wavydown' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "RGB",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 4,
+        "threshold": 6.53125,
+        "prediction": "V",
+        "quantization": 0,
+        "clamp": "none",
+        "wavelet": 16,
+        "transform": "FWT",
+        "compression": 18.416667938232422,
+        "scale": 50,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

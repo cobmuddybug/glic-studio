@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "5pl1tz",
+  "source": "GLIC preset '5pl1tz' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "XYZ",
+    "border": [
+      129,
+      129,
+      129
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 512,
+        "max_block": 512,
+        "threshold": 250.0,
+        "prediction": "REF",
+        "quantization": 9,
+        "clamp": "none",
+        "wavelet": 64,
+        "transform": "FWT",
+        "compression": 0.0,
+        "scale": 16777216,
+        "encoding": "RAW"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

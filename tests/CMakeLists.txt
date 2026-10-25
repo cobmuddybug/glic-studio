@@ -15,8 +15,9 @@ add_executable(glic_tests
     test_golden.cpp
     test_libglic.cpp
     test_studio.cpp
+    test_preset.cpp
 )
-target_link_libraries(glic_tests PRIVATE glic::glic glic_cli_spec studio_core doctest::doctest)
+target_link_libraries(glic_tests PRIVATE glic::glic glic_cli_spec glic_preset studio_core doctest::doctest)
 target_compile_definitions(glic_tests PRIVATE
     GLIC_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
     GLIC_BASELINE_DIR="${BASELINE_OUT}"

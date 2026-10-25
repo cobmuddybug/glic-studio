@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "blockssmoll",
+  "source": "GLIC preset 'blockssmoll' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "OHTA",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 16,
+        "max_block": 256,
+        "threshold": 15.0,
+        "prediction": "DIFF",
+        "quantization": 209,
+        "clamp": "mod256",
+        "wavelet": 47,
+        "transform": "FWT",
+        "compression": 103.41667175292969,
+        "scale": 645,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

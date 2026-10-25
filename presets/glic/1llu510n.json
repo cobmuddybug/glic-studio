@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "1llu510n",
+  "source": "GLIC preset '1llu510n' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "LUV",
+    "border": [
+      129,
+      129,
+      129
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 512,
+        "max_block": 512,
+        "threshold": 63.1875,
+        "prediction": "BSAD",
+        "quantization": 228,
+        "clamp": "none",
+        "wavelet": 64,
+        "transform": "FWT",
+        "compression": 0.0,
+        "scale": 172950,
+        "encoding": "RAW"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

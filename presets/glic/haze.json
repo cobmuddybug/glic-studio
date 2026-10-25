@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "haze",
+  "source": "GLIC preset 'haze' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "XYZ",
+    "border": [
+      112,
+      128,
+      136
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 16,
+        "max_block": 128,
+        "threshold": 9.59375,
+        "prediction": "LDIAG",
+        "quantization": 15,
+        "clamp": "none",
+        "wavelet": 63,
+        "transform": "RANDOM",
+        "compression": 0.0,
+        "scale": 6915,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

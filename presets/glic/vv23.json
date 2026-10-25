@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "vv23",
+  "source": "GLIC preset 'vv23' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "LAB",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 4,
+        "max_block": 4,
+        "threshold": 35.625,
+        "prediction": "PAETH",
+        "quantization": 48,
+        "clamp": "mod256",
+        "wavelet": 8,
+        "transform": "WPT",
+        "compression": 128.9166717529297,
+        "scale": 128,
+        "encoding": "RLE"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

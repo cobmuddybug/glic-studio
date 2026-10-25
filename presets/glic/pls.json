@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "pls",
+  "source": "GLIC preset 'pls' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "HWB",
+    "border": [
+      100,
+      100,
+      100
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 32,
+        "max_block": 256,
+        "threshold": 147.40625,
+        "prediction": "ANGLE",
+        "quantization": 0,
+        "clamp": "none",
+        "wavelet": 0,
+        "transform": "FWT",
+        "compression": 0.0,
+        "scale": 1048576,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "bl33dyl1n3z",
+  "source": "GLIC preset 'bl33dyl1n3z' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "HWB",
+    "border": [
+      129,
+      129,
+      129
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 2,
+        "max_block": 2,
+        "threshold": 5.0,
+        "prediction": "LDIAG",
+        "quantization": 228,
+        "clamp": "none",
+        "wavelet": 65,
+        "transform": "FWT",
+        "compression": 0.0,
+        "scale": 172950,
+        "encoding": "RAW"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}

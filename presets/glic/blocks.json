@@ -1,0 +1,33 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "blocks",
+  "source": "GLIC preset 'blocks' (GlitchCodec/GLIC, MIT), converted by tools/convert_glic_presets.py",
+  "encode": {
+    "colorspace": "OHTA",
+    "border": [
+      128,
+      128,
+      128
+    ],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 64,
+        "max_block": 512,
+        "threshold": 15.0,
+        "prediction": "DIFF",
+        "quantization": 119,
+        "clamp": "mod256",
+        "wavelet": 47,
+        "transform": "FWT",
+        "compression": 196.9166717529297,
+        "scale": 163,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": {
+    "linked": true
+  }
+}
