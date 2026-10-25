@@ -21,6 +21,8 @@ enum class Action {
     ToggleDecodeLink,
     SavePreset,
     ToggleOverlays,
+    ToggleCorruption,
+    RerollSeed,
 };
 
 struct KeyBinding {

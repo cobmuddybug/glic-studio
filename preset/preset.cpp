@@ -129,6 +129,34 @@ void writeChannels(json& o, const std::array<ChannelSettings, 3>& channels, bool
     o["channels"] = out;
 }
 
+void readCorruption(const json& c, CorruptionSettings& out) {
+    if (!c.is_object()) throw ParseError{"corruption must be an object"};
+    out.enabled = c.value("enabled", out.enabled);
+    out.seed = c.value("seed", out.seed);
+    if (c.contains("mode") && c["mode"].get<std::string>() != "random_bytes")
+        throw ParseError{"unknown corruption mode \"" + c["mode"].get<std::string>() + "\""};
+    out.rate = c.value("rate", out.rate);
+    out.protectHeader = c.value("protect_header", out.protectHeader);
+    out.regions.clear();
+    if (c.contains("regions")) {
+        if (!c["regions"].is_array()) throw ParseError{"corruption regions must be a list"};
+        for (const json& r : c["regions"])
+            out.regions.push_back({r.at("start").get<double>(), r.at("end").get<double>(), r.at("rate").get<double>()});
+    }
+}
+
+void writeCorruption(json& c, const CorruptionSettings& in) {
+    if (!c.is_object()) c = json::object();
+    c["enabled"] = in.enabled;
+    c["seed"] = in.seed;
+    c["mode"] = "random_bytes";
+    c["rate"] = in.rate;
+    c["protect_header"] = in.protectHeader;
+    json regions = json::array();
+    for (const auto& r : in.regions) regions.push_back({{"start", r.start}, {"end", r.end}, {"rate", r.rate}});
+    c["regions"] = regions;
+}
+
 } // namespace
 
 std::optional<Preset> parse(const std::string& text, std::string* error) {
@@ -167,6 +195,7 @@ std::optional<Preset> parse(const std::string& text, std::string* error) {
             readChannels(d, p.decode.channels, true);
         }
         p.decode.seed = p.encode.seed;
+        if (doc.contains("corruption")) readCorruption(doc["corruption"], p.corruption);
         return p;
     } catch (const ParseError& e) {
         return fail(e.message);
@@ -206,6 +235,8 @@ std::string serialize(const Preset& p) {
     d["border"] = {p.decode.border[0], p.decode.border[1], p.decode.border[2]};
     writeChannels(d, p.decode.channels, true);
 
+    writeCorruption(doc["corruption"], p.corruption);
+
     return doc.dump(2) + "\n";
 }
 
@@ -215,10 +246,11 @@ bool save(const std::string& path, const Preset& p) {
     return static_cast<bool>(out);
 }
 
-DecodeSettings decodeSettings(const Preset& p) {
+DecodeSettings decodeSettings(const Preset& p, int width, int height) {
     DecodeSettings ds;
     ds.seed = p.encode.seed;
     if (!p.decodeLinked) ds.override = paramsFromSettings(p.decode);
+    if (p.corruption.enabled && width > 0 && height > 0) limitCorruptDecode(ds, width, height);
     return ds;
 }
 
@@ -230,7 +262,8 @@ DecodeResult render(const Image& image, const Preset& p, const Hooks* hooks) {
         r.error = enc.error;
         return r;
     }
-    return decode(enc.data, decodeSettings(p), hooks);
+    corrupt(enc.data, p.corruption);
+    return decode(enc.data, decodeSettings(p, image.width, image.height), hooks);
 }
 
 std::vector<uint8_t> exportPng(const Image& image, const Preset& p) {

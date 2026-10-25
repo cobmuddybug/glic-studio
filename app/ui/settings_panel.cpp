@@ -1,5 +1,6 @@
 #include "settings_panel.hpp"
 
+#include "corrupt_tab.hpp"
 #include "model/params.hpp"
 
 #include <imgui.h>
@@ -289,6 +290,10 @@ void drawSettingsPanel(App& app) {
     }
     if (ImGui::BeginTabItem("Decode", nullptr, flags("Decode"))) {
         decodeTab(app);
+        ImGui::EndTabItem();
+    }
+    if (ImGui::BeginTabItem("Corrupt", nullptr, flags("Corrupt"))) {
+        drawCorruptTab(app);
         ImGui::EndTabItem();
     }
     ImGui::EndTabBar();

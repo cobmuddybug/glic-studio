@@ -8,6 +8,7 @@
 // that starts is reported back, cancelled ones included, so the scheduler
 // always knows what is in flight; cancelled results carry no image.
 
+#include <glic/corrupt.hpp>
 #include <glic/glic.hpp>
 
 #include <atomic>
@@ -26,6 +27,7 @@ struct RenderRequest {
     std::shared_ptr<const glic::Image> source;  // full-resolution source
     glic::EncodeSettings encode;
     glic::DecodeSettings decode;
+    glic::CorruptionSettings corruption;  // applied to a copy of the encoded bytes
     bool proxy = false;   // render a downscaled proxy
     int proxyEdge = 512;  // longest edge of the proxy
     // Overlay data to capture from the decode (design §M4). Off = no cost.
@@ -42,10 +44,14 @@ struct RenderResult {
     glic::Image image;             // decoded, at proxy or full size (GLIC pads sides < 64)
     int sourceWidth = 0, sourceHeight = 0;  // size of the image that was encoded
     double encodeMs = 0, decodeMs = 0;
-    bool encodeReused = false;  // decode-only change: the cached GlicData was decoded again
-    std::shared_ptr<const glic::GlicData> data;
-    std::shared_ptr<const glic::Capture> capture;  // set when the request asked for any
+    bool encodeReused = false;
+    bool decodeFailed = false;  // encoding worked; decoding (e.g. corrupted data) did not  // decode-only change: the cached GlicData was decoded again
+    std::shared_ptr<const glic::GlicData> data;    // as encoded (never corrupted)
+    std::shared_ptr<const glic::Capture> capture;
+    glic::CorruptionStats corruption;  // histogram has kCorruptionBins bins when corruption is on  // set when the request asked for any
 };
+
+constexpr int kCorruptionBins = 512;
 
 class RenderWorker {
 public:

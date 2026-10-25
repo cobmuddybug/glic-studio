@@ -7,6 +7,7 @@
 // Unknown fields are kept on load and written back on save (forward
 // compatibility), including unknown keys inside channel objects.
 
+#include <glic/corrupt.hpp>
 #include <glic/glic.hpp>
 
 #include <nlohmann/json.hpp>
@@ -26,10 +27,12 @@ struct Preset {
     EncodeSettings encode;           // includes the seed
     bool decodeLinked = true;
     EncodeSettings decode;           // decode-side values; used when !decodeLinked
+    CorruptionSettings corruption;   // applied to the .glic bytes between encode and decode
     nlohmann::json document = nlohmann::json::object();  // as loaded; unknown fields survive
 
     bool sameSettings(const Preset& o) const {
-        return encode == o.encode && decodeLinked == o.decodeLinked && (decodeLinked || decode == o.decode);
+        return encode == o.encode && decodeLinked == o.decodeLinked && (decodeLinked || decode == o.decode) &&
+               corruption == o.corruption;
     }
 };
 
@@ -41,10 +44,11 @@ std::optional<Preset> load(const std::string& path, std::string* error = nullptr
 std::string serialize(const Preset& p);
 bool save(const std::string& path, const Preset& p);
 
-// What to decode with.
-DecodeSettings decodeSettings(const Preset& p);
+// What to decode with. `width`/`height` (the encoded image) set the size
+// limit for corrupted files; without them there is no limit.
+DecodeSettings decodeSettings(const Preset& p, int width = 0, int height = 0);
 
-// Encode + decode one image with a preset. The GUI's full-resolution render
+// Encode, corrupt, decode one image with a preset. The GUI's full-resolution render
 // and `glic render --preset` both go through this.
 DecodeResult render(const Image& image, const Preset& p, const Hooks* hooks = nullptr);
 

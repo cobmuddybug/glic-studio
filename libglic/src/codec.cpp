@@ -644,7 +644,8 @@ DecodeResult decode(const GlicData& data, const DecodeSettings& settings, const 
                 hd.params.channels[p].prediction = max(0, ov.channels[p].prediction);
             }
         }
-        if (settings.maxPixels > 0 && static_cast<int64_t>(hd.w) * hd.h > settings.maxPixels) {
+        if ((settings.maxPixels > 0 && static_cast<int64_t>(hd.w) * hd.h > settings.maxPixels) ||
+            (settings.maxSide > 0 && max(hd.w, hd.h) > settings.maxSide)) {
             result.error = "Decoded size " + std::to_string(hd.w) + "x" + std::to_string(hd.h) + " exceeds the limit";
             return result;
         }

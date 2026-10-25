@@ -425,3 +425,36 @@ Per §11, where the code disagreed with the plan, the code won:
 - Rasterising and legend logic live in `app/render/overlay.*` (unit-tested). `--overlays
   blocks,predictors,coefficients[,ch=N]` opens the panel at start for `--capture` screenshots,
   and `tools/gui_smoke.sh` uses it.
+
+### Recorded during M5
+
+- **Where corruption lives**: `glic/corrupt.hpp` in libglic, as a pure function over `.glic`
+  bytes. The codec is untouched and the golden tests are unchanged. `preset::render` (the CLI)
+  and the render worker (the GUI) both call it, so `tools/check_gui_parity.sh` covers corruption
+  through `presets/examples/corrupt-band.json`.
+- **Random-bytes mode**: one `std::mt19937_64` seeded from `corruption.seed`. Each eligible byte
+  gets one draw, compared with `rate * 2^53` (exact, so it is portable), and each hit gets a
+  second draw for the new value. Regions are fractions of the payload (the bytes after the
+  237-byte headers). Later regions win where they overlap, and a region with rate 0 protects
+  its stretch. "Protect header" skips the first 237 bytes.
+- **Preset** gains `"corruption": {enabled, seed, mode: "random_bytes", rate, protect_header,
+  regions: [{start, end, rate}]}`. An unknown mode is a parse error.
+- **Reroll (N)** derives the next seed from the current one with splitmix64. There is no
+  clock, and the seed is saved in the preset, so every render can be reproduced. `C` toggles
+  corruption. Both are also in the Decode menu.
+- **The encode cache stays clean**: the worker corrupts a copy for each decode, so corruption
+  edits are decode-only re-renders. The proxy file is smaller than the full one, so the same
+  seed damages different bytes in the preview. Rates and regions keep the character similar.
+- **Decode limits for corrupted files**: a damaged header can claim up to 8191 px per side, and
+  GLIC's quadtree is square, so the decode cost grows with (longer side)², not w·h. The fuzz
+  found 8000×64 files taking 59 s. `DecodeSettings::maxSide` (new, a refusal only) and
+  `limitCorruptDecode()` cap the longer side at twice the source's (at least 256). After that
+  the slowest fuzz case takes 7 ms.
+- **Failure**: a corrupted file that fails to decode leaves the last good render on screen, and
+  the status bar says "Decode failed: … (showing the last good render)".
+- **Fuzz** (§8): `corruption_fuzz` is a separate ctest entry running 1,000 seeds over 9
+  image/setting variants at rates up to 0.5, with and without header protection. It also runs
+  clean under ASan/UBSan (`build/asan`).
+- **Byte map**: the payload's sections (segmentation, prediction, image data per channel) from
+  the clean file's layout, a histogram of the bytes that changed, and the regions. Drag to add
+  a region, which starts at 10× the base rate. Right-click a region to remove it.

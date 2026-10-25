@@ -40,6 +40,8 @@ struct ShownRender {
     glic::Image image;                         // decoded (GLIC pads sides below 64)
     std::shared_ptr<const glic::GlicData> data;
     std::shared_ptr<const glic::Capture> capture;  // overlay data, if it was asked for
+    bool corrupted = false;                        // decoded from corrupted bytes
+    glic::CorruptionStats corruption;
 };
 
 class App {
@@ -86,6 +88,14 @@ public:
     // The decode-side values the encoder writes for the current settings.
     glic::EncodeSettings headerSettings() const;
 
+    // Corrupt tab (design §M5). Call settingsChanged() after editing.
+    glic::CorruptionSettings& editCorruption() { return corruption_; }
+    // A new seed derived from the current one (N): deterministic, no clock.
+    void rerollCorruptionSeed();
+    void setCorruptionEnabled(bool on);
+    // Layout of the shown (clean) encoded data, for the byte map.
+    const glic::GlicLayout* shownLayout() const { return shown_.data ? &shownLayout_ : nullptr; }
+
     // Overlays (design §M4). Call overlaysChanged() after editing them.
     OverlaySettings& overlays() { return overlays_; }
     void overlaysChanged();
@@ -126,6 +136,8 @@ private:
     glic::EncodeSettings decodeSettings_;  // decode-side values only (used when unlinked)
     bool decodeChannelsLinked_ = true;
     int proxyEdge_ = 512;
+    glic::CorruptionSettings corruption_;
+    glic::GlicLayout shownLayout_;
 
     std::shared_ptr<const glic::Image> source_;
     std::string sourcePath_;

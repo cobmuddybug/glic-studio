@@ -17,6 +17,8 @@ const std::vector<KeyBinding>& keyBindings() {
         {Action::Zoom100, ImGuiKey_1, "1", false},
         {Action::ToggleDecodeLink, ImGuiKey_L, "L", false},
         {Action::ToggleOverlays, ImGuiKey_O, "O", false},
+        {Action::ToggleCorruption, ImGuiKey_C, "C", false},
+        {Action::RerollSeed, ImGuiKey_N, "N", false},
     };
     return table;
 }

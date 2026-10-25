@@ -144,7 +144,7 @@ TEST_CASE("every bundled preset parses and renders") {
             n++;
         }
     }
-    CHECK(n == 150);
+    CHECK(n == 151);
 }
 
 TEST_CASE("parity: the GUI's render path and `glic render` give identical bytes") {

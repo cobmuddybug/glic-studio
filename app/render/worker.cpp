@@ -107,12 +107,22 @@ void RenderWorker::run() {
                     decodeHooks.capture = capture.get();
                 }
                 auto t1 = std::chrono::steady_clock::now();
-                auto dec = glic::decode(*data, req.decode, &decodeHooks);
+                const glic::GlicData* toDecode = data.get();
+                glic::GlicData damaged;
+                glic::DecodeSettings decode = req.decode;
+                if (req.corruption.enabled) {
+                    damaged = *data;
+                    res.corruption = glic::corrupt(damaged, req.corruption, kCorruptionBins);
+                    toDecode = &damaged;
+                    glic::limitCorruptDecode(decode, input->width, input->height);
+                }
+                auto dec = glic::decode(*toDecode, decode, &decodeHooks);
                 res.decodeMs = msSince(t1);
                 if (dec.cancelled) {
                     cancelled = true;
                 } else if (!dec.ok) {
                     res.error = dec.error;
+                    res.decodeFailed = true;
                 } else {
                     res.ok = true;
                     res.image = std::move(dec.image);

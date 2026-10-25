@@ -59,6 +59,8 @@ struct DecodeSettings {
     std::optional<DecodeParams> override;
     int64_t seed = 0;          // only consumed by random wavelets/transforms in corrupt files
     int64_t maxPixels = 0;     // refuse larger decodes (0 = no limit; GLIC caps sides at 8191)
+    int maxSide = 0;           // refuse a longer side than this (0 = no limit). Decode work grows
+                               // with the square quadtree root, i.e. (longer side)^2, not w*h
 };
 
 // Where things are in a .glic, as GLIC's reader walks it.

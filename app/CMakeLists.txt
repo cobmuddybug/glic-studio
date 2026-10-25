@@ -46,6 +46,7 @@ add_executable(glic-studio
     platform/platform.cpp
     render/texture.cpp
     ui/canvas.cpp
+    ui/corrupt_tab.cpp
     ui/overlay_panel.cpp
     ui/settings_panel.cpp
     ui/keybindings.cpp

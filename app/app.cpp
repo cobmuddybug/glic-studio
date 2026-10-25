@@ -4,6 +4,7 @@
 #include "spec.hpp"
 #include "render/resize.hpp"
 #include "ui/canvas.hpp"
+#include "ui/corrupt_tab.hpp"
 #include "ui/overlay_panel.hpp"
 #include "ui/keybindings.hpp"
 #include "ui/settings_panel.hpp"
@@ -134,6 +135,7 @@ glic::preset::Preset App::currentPreset() const {
         p.decode = decodeSettings_;
     }
     p.decode.seed = settings_.seed;
+    p.corruption = corruption_;
     return p;
 }
 
@@ -145,6 +147,7 @@ void App::applyPreset(const glic::preset::Preset& p, const std::string& origin) 
     decodeLinked_ = p.decodeLinked;
     decodeSettings_ = p.decode;
     decodeChannelsLinked_ = channelsIdentical(decodeSettings_);
+    corruption_ = p.corruption;
     setStatus("Preset " + (p.name.empty() ? origin : "\"" + p.name + "\"") + " loaded");
     settingsChanged();
 }
@@ -287,6 +290,24 @@ void App::setDecodeLinked(bool linked) {
     settingsChanged();
 }
 
+void App::setCorruptionEnabled(bool on) {
+    if (on == corruption_.enabled) return;
+    corruption_.enabled = on;
+    setStatus(on ? "Corruption on" : "Corruption off");
+    settingsChanged();
+}
+
+void App::rerollCorruptionSeed() {
+    // splitmix64 of the current seed: a fresh-looking seed, still reproducible.
+    uint64_t z = static_cast<uint64_t>(corruption_.seed) + 0x9E3779B97F4A7C15ull;
+    z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ull;
+    z = (z ^ (z >> 27)) * 0x94D049BB133111EBull;
+    z ^= z >> 31;
+    corruption_.seed = static_cast<int64_t>(z >> 1);  // keep it positive for readable JSON
+    setStatus(corruption_.enabled ? "New corruption seed" : "New corruption seed (corruption is off: C)");
+    settingsChanged();
+}
+
 void App::overlaysChanged() {
     overlayDirty_ = true;
     framesToRender_ = std::max(framesToRender_, 2);
@@ -327,7 +348,9 @@ void App::pumpRender() {
             acceptResult(std::move(r));
         } else {
             // Keep the last good render on screen (design §M5).
-            setStatus("Render failed: " + r.error, true);
+            std::string why = r.error;
+            if (why.rfind("Decoding failed: ", 0) == 0) why = why.substr(17);
+            setStatus((r.decodeFailed ? "Decode failed: " : "Render failed: ") + why + " (showing the last good render)", true);
         }
     }
     if (!source_) return;
@@ -341,6 +364,7 @@ void App::pumpRender() {
         req.proxyEdge = proxyEdge_;
         req.captureSegments = overlays_.needsSegments();
         req.captureValues = overlays_.needsValues();
+        req.corruption = corruption_;
         worker_.submit(std::move(req));
     }
 }
@@ -356,6 +380,9 @@ void App::acceptResult(RenderResult r) {
     shown_.image = std::move(r.image);
     shown_.data = std::move(r.data);
     shown_.capture = std::move(r.capture);
+    shown_.corrupted = r.corruption.fileSize > 0;  // stats exist only for corrupted renders
+    shown_.corruption = std::move(r.corruption);
+    if (shown_.data) shownLayout_ = shown_.data->layout();
     glitchedTex_.upload(shown_.image);
     diffDirty_ = true;
     overlayDirty_ = true;
@@ -409,6 +436,8 @@ void App::runAction(int a) {
     case Action::ZoomFit: view_.fit = true; break;
     case Action::Zoom100: zoomTo100(view_, fb); break;
     case Action::ToggleDecodeLink: setDecodeLinked(!decodeLinked_); break;
+    case Action::ToggleCorruption: setCorruptionEnabled(!corruption_.enabled); break;
+    case Action::RerollSeed: rerollCorruptionSeed(); break;
     case Action::ToggleOverlays:
         overlays_.panel = !overlays_.panel;
         overlaysChanged();
@@ -490,6 +519,10 @@ void App::menuBar() {
         bool linked = decodeLinked_;
         if (ImGui::MenuItem("Linked to encode", shortcutLabel(Action::ToggleDecodeLink), &linked)) setDecodeLinked(linked);
         ImGui::TextDisabled("Unlinked = mismatched decoding (Decode tab)");
+        ImGui::Separator();
+        bool corrupt = corruption_.enabled;
+        if (ImGui::MenuItem("Corrupt encoded data", shortcutLabel(Action::ToggleCorruption), &corrupt)) setCorruptionEnabled(corrupt);
+        if (ImGui::MenuItem("New corruption seed", shortcutLabel(Action::RerollSeed))) rerollCorruptionSeed();
         ImGui::EndMenu();
     }
     if (ImGui::BeginMenu("Preview")) {
@@ -535,6 +568,15 @@ void App::statusBar(float height) {
         else text += shown_.valid ? (shown_.proxy ? "proxy" : "full") : "-";
     } else {
         text = "No image";
+    }
+    if (corruption_.enabled) {
+        ImGui::TextColored(ImVec4(1.0f, 0.45f, 0.4f, 1), "corrupt");
+        if (shown_.corrupted)
+            ImGui::SetItemTooltip("%zu bytes changed (seed %lld). C turns corruption off, N rerolls",
+                                  shown_.corruption.bytesChanged, static_cast<long long>(corruption_.seed));
+        ImGui::SameLine();
+        ImGui::TextDisabled("\xC2\xB7");
+        ImGui::SameLine();
     }
     if (!decodeLinked_) {
         ImGui::TextColored(ImVec4(0.95f, 0.7f, 0.3f, 1), "mismatch");

@@ -43,7 +43,7 @@ void usage() {
         "  --spec \"k=v ...\"   initial encode settings (same keys as `glic encode --spec`)\n"
         "  --decode \"k=v ...\" unlink decoding and set these decode-side values\n"
         "  --view MODE        glitched | original | split | difference\n"
-        "  --tab NAME         settings tab to show: encode | decode\n"
+        "  --tab NAME         settings tab to show: encode | decode | corrupt\n"
         "  --overlays LIST    show codec overlays: blocks,predictors,coefficients[,ch=1|2|3]\n"
         "  --size WxH         initial window size in points\n"
         "  --capture OUT.png  screenshot the window once a full render is on screen, then exit\n"
@@ -185,6 +185,7 @@ int main(int argc, char** argv) {
             app.settingsChanged();
         }
         if (opt.tab == "decode") app.selectTab("Decode");
+        else if (opt.tab == "corrupt") app.selectTab("Corrupt");
         if (!opt.overlays.empty()) {
             studio::OverlaySettings& ov = app.overlays();
             ov.panel = true;

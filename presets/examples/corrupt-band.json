@@ -1,0 +1,35 @@
+{
+  "format": "glic-studio-preset",
+  "version": 1,
+  "name": "corrupt band",
+  "description": "Light random damage over the payload, heavy damage across one band of the image data",
+  "encode": {
+    "colorspace": "YCbCr",
+    "border": [128, 128, 128],
+    "seed": 0,
+    "channels": [
+      {
+        "min_block": 4,
+        "max_block": 128,
+        "threshold": 20,
+        "prediction": "PAETH",
+        "quantization": 30,
+        "clamp": "none",
+        "wavelet": "Haar",
+        "transform": "FWT",
+        "compression": 0,
+        "scale": 65536,
+        "encoding": "PACKED"
+      }
+    ]
+  },
+  "decode": { "linked": true },
+  "corruption": {
+    "enabled": true,
+    "seed": 1337,
+    "mode": "random_bytes",
+    "rate": 0.0002,
+    "protect_header": true,
+    "regions": [ { "start": 0.62, "end": 0.66, "rate": 0.002 } ]
+  }
+}

@@ -2,6 +2,7 @@ add_library(glic STATIC
     src/bitio.cpp
     src/codec.cpp
     src/colorspaces.cpp
+    src/corrupt.cpp
     src/image_io.cpp
     src/names.cpp
     src/planes.cpp
