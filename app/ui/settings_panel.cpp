@@ -1,5 +1,6 @@
 #include "settings_panel.hpp"
 
+#include "animate_tab.hpp"
 #include "corrupt_tab.hpp"
 #include "model/params.hpp"
 
@@ -294,6 +295,10 @@ void drawSettingsPanel(App& app) {
     }
     if (ImGui::BeginTabItem("Corrupt", nullptr, flags("Corrupt"))) {
         drawCorruptTab(app);
+        ImGui::EndTabItem();
+    }
+    if (ImGui::BeginTabItem("Animate", nullptr, flags("Animate"))) {
+        drawAnimateTab(app);
         ImGui::EndTabItem();
     }
     ImGui::EndTabBar();

@@ -1,9 +1,11 @@
 # studio_core: app logic with no UI or platform dependencies (unit-tested).
 add_library(studio_core STATIC
+    model/animation.cpp
     model/explore.cpp
     model/history.cpp
     model/preview_scheduler.cpp
     model/params.cpp
+    render/animation_export.cpp
     render/batch.cpp
     render/overlay.cpp
     render/resize.cpp
@@ -48,6 +50,7 @@ add_executable(glic-studio
     app.cpp
     platform/platform.cpp
     render/texture.cpp
+    ui/animate_tab.cpp
     ui/canvas.cpp
     ui/corrupt_tab.cpp
     ui/explore_ui.cpp

@@ -252,7 +252,9 @@ void drawCorruptTab(App& app) {
             changed = true;
         }
     } else {
-        ImGui::TextDisabled("Drag across the byte map to corrupt one stretch harder (or protect it with rate 0).");
+        ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+        ImGui::TextWrapped("Drag across the byte map to corrupt one stretch harder (or protect it with rate 0).");
+        ImGui::PopStyleColor();
     }
     ImGui::EndDisabled();
 

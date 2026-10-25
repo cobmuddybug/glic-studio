@@ -13,7 +13,7 @@
 
 namespace studio {
 
-enum class AppEventKind { Quit, OpenFile, SaveFile, SavePreset, DropFile, RenderDone, Wake };
+enum class AppEventKind { Quit, OpenFile, SaveFile, SavePreset, SaveAnimation, DropFile, RenderDone, Wake };
 
 struct AppEvent {
     AppEventKind kind;
@@ -37,6 +37,9 @@ public:
     void showOpenImageDialog();
     void showSavePngDialog(const std::string& suggestedName);
     void showSavePresetDialog(const std::string& suggestedName);
+    // An MP4 or GIF file (gif = true), or a folder for PNG frames (folder = true).
+    // Answers with SaveAnimation.
+    void showSaveAnimationDialog(const std::string& suggestedName, bool gif, bool folder);
 
     // Places a PNG on the clipboard (image/png).
     bool copyPngToClipboard(std::vector<uint8_t> png);

@@ -6,6 +6,7 @@
 #include "render/overlay.hpp"
 #include "platform/platform.hpp"
 #include "render/texture.hpp"
+#include "render/animation_export.hpp"
 #include "render/batch.hpp"
 #include "render/worker.hpp"
 
@@ -62,6 +63,23 @@ struct MutateGrid {
     std::array<int, kCells> state{};           // 0 rendering, 1 ready, 2 failed
     std::array<std::string, kCells> errors;
     int cellWidth = 0, cellHeight = 0;         // useful size inside the (padded) renders
+};
+
+// The Animate tab (design §M7).
+struct AnimationState {
+    AnimationSpec spec;
+    AnimFormat format = AnimFormat::Mp4;
+    int fps = 24;
+    int maxEdge = 0;                     // 0 = full size
+    std::optional<std::string> ffmpeg;   // found on PATH at startup
+    // Preview of one frame, rendered off to the side (never touches the settings).
+    int previewFrame = 0;
+    uint64_t previewBatch = 0;
+    bool previewReady = false;
+    std::string previewError;
+    Texture previewTex;
+    int previewWidth = 0, previewHeight = 0;
+    AnimationProgress lastProgress;
 };
 
 class App {
@@ -140,7 +158,14 @@ public:
     void regenerateMutations();
     void adoptMutation(int cell);
     bool hasSource() const { return source_ != nullptr; }
-    // For --actions: runs "randomize", "undo", "redo", "mutate" or "adopt:N";
+
+    AnimationState& animation() { return anim_; }
+    void requestAnimationPreview();       // renders anim_.previewFrame
+    void requestAnimationExport();        // asks where to save, then exports
+    void cancelAnimationExport() { exporter_.cancel(); }
+    bool exporting() { return exporter_.running(); }
+    // For --actions: runs "randomize", "undo", "redo", "mutate", "adopt:N" or
+    // "export-anim:PATH" (the Animate tab's settings; .mp4, .gif, else a folder);
     // false for an unknown name. scriptIdle(): the full render and any grid
     // cells are done, so the next action may run.
     bool runNamedAction(const std::string& name);
@@ -166,6 +191,8 @@ private:
     void refreshOverlayTextures();
     void recordHistory();
     void pumpBatch();
+    void pumpAnimation();
+    void startAnimationExport(const std::string& path);
     glic::Image croppedShown() const;
     double nowMs() const;
 
@@ -204,6 +231,9 @@ private:
     ExploreRng exploreRng_;
     MutateGrid grid_;
     BatchRenderer batch_;
+    AnimationState anim_;
+    BatchRenderer animPreview_;
+    AnimationExporter exporter_;
 
     std::string exportPath_;  // set while an export waits for its full render
 

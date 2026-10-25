@@ -53,4 +53,16 @@ glic::Image difference(const glic::Image& a, const glic::Image& b) {
     return d;
 }
 
+glic::Image cropTo(const glic::Image& img, int w, int h) {
+    if (img.width == w && img.height == h) return img;
+    glic::Image out;
+    out.width = std::min(w, img.width);
+    out.height = std::min(h, img.height);
+    out.pixels.resize(static_cast<size_t>(out.width) * out.height);
+    for (int y = 0; y < out.height; y++)
+        std::copy_n(img.pixels.begin() + static_cast<size_t>(y) * img.width, out.width,
+                    out.pixels.begin() + static_cast<size_t>(y) * out.width);
+    return out;
+}
+
 } // namespace studio

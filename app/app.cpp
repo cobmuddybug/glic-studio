@@ -5,6 +5,7 @@
 #include "render/resize.hpp"
 #include "ui/canvas.hpp"
 #include "ui/corrupt_tab.hpp"
+#include "ui/animate_tab.hpp"
 #include "ui/explore_ui.hpp"
 #include "ui/overlay_panel.hpp"
 #include "ui/keybindings.hpp"
@@ -32,18 +33,6 @@ constexpr const char* kSettingsWindow = "Settings";
 constexpr const char* kHistoryWindow = "History";
 constexpr int kThumbnailEdge = 160;
 
-glic::Image crop(const glic::Image& img, int w, int h) {
-    if (img.width == w && img.height == h) return img;
-    glic::Image out;
-    out.width = std::min(w, img.width);
-    out.height = std::min(h, img.height);
-    out.pixels.resize(static_cast<size_t>(out.width) * out.height);
-    for (int y = 0; y < out.height; y++)
-        std::copy_n(img.pixels.begin() + static_cast<size_t>(y) * img.width, out.width,
-                    out.pixels.begin() + static_cast<size_t>(y) * out.width);
-    return out;
-}
-
 } // namespace
 
 const char* viewModeName(ViewMode m) {
@@ -59,7 +48,10 @@ const char* viewModeName(ViewMode m) {
 App::App(Platform& platform)
     : platform_(platform),
       worker_([&platform] { platform.postEvent(AppEventKind::RenderDone); }),
-      batch_(0, [&platform] { platform.postEvent(AppEventKind::RenderDone); }) {
+      batch_(0, [&platform] { platform.postEvent(AppEventKind::RenderDone); }),
+      animPreview_(1, [&platform] { platform.postEvent(AppEventKind::RenderDone); }) {
+    anim_.ffmpeg = findFfmpeg();
+    if (!anim_.ffmpeg) anim_.format = AnimFormat::PngFrames;
     linkChannels_ = channelsIdentical(settings_);
 }
 
@@ -86,6 +78,9 @@ void App::handle(const AppEvent& e) {
         break;
     case AppEventKind::SavePreset:
         if (!e.path.empty()) savePreset(e.path);
+        break;
+    case AppEventKind::SaveAnimation:
+        if (!e.path.empty()) startAnimationExport(e.path);
         break;
     case AppEventKind::SaveFile:
         if (e.path.empty()) break;
@@ -402,18 +397,87 @@ void App::adoptMutation(int cell) {
     regenerateMutations();  // keep exploring from the adopted preset
 }
 
+// ------------------------------------------------------------ animation
+
+void App::requestAnimationPreview() {
+    if (!source_) return;
+    auto& a = anim_;
+    a.previewFrame = std::clamp(a.previewFrame, 0, std::max(0, a.spec.frames - 1));
+    auto img = std::make_shared<const glic::Image>(downscaleToFit(*source_, MutateGrid::kCellEdge));
+    a.previewWidth = img->width;
+    a.previewHeight = img->height;
+    a.previewReady = false;
+    a.previewError.clear();
+    animPreview_.submit(++a.previewBatch, img, {framePreset(currentPreset(), a.spec, a.previewFrame)});
+}
+
+void App::requestAnimationExport() {
+    if (!source_) {
+        setStatus("Open an image first", true);
+        return;
+    }
+    if (exporter_.running()) {
+        setStatus("An animation export is already running", true);
+        return;
+    }
+    const std::string stem = std::filesystem::path(sourcePath_).stem().string() + "-glic";
+    switch (anim_.format) {
+    case AnimFormat::Mp4: platform_.showSaveAnimationDialog(stem + ".mp4", false, false); break;
+    case AnimFormat::Gif: platform_.showSaveAnimationDialog(stem + ".gif", true, false); break;
+    case AnimFormat::PngFrames: platform_.showSaveAnimationDialog({}, false, true); break;
+    }
+}
+
+void App::startAnimationExport(const std::string& path) {
+    if (!source_) return;
+    AnimationJob job;
+    job.source = source_;
+    job.base = currentPreset();
+    job.spec = anim_.spec;
+    job.maxEdge = anim_.maxEdge;
+    job.fps = anim_.fps;
+    job.format = anim_.format;
+    job.output = path;
+    if (anim_.format != AnimFormat::PngFrames) {
+        const char* ext = anim_.format == AnimFormat::Gif ? ".gif" : ".mp4";
+        if (std::filesystem::path(job.output).extension().empty()) job.output += ext;
+        job.ffmpeg = anim_.ffmpeg.value_or("ffmpeg");
+    }
+    if (exporter_.start(std::move(job))) setStatus("Exporting animation...");
+    else setStatus("An animation export is already running", true);
+    framesToRender_ = std::max(framesToRender_, 2);
+}
+
+void App::pumpAnimation() {
+    for (auto& r : animPreview_.poll()) {
+        if (r.batch != anim_.previewBatch) continue;
+        if (r.ok) anim_.previewTex.upload(r.image);
+        else anim_.previewError = r.error;
+        anim_.previewReady = r.ok;
+    }
+    const AnimationProgress p = exporter_.progress();
+    if (p.done && !anim_.lastProgress.done) setStatus(p.message, !p.ok && !p.cancelled);
+    anim_.lastProgress = p;
+}
+
 bool App::runNamedAction(const std::string& name) {
     if (name == "randomize") randomizeAll();
     else if (name == "undo") undo();
     else if (name == "redo") redo();
     else if (name == "mutate") openMutateGrid(!grid_.open);
     else if (name.rfind("adopt:", 0) == 0) adoptMutation(std::atoi(name.c_str() + 6) - 1);
+    else if (name.rfind("export-anim:", 0) == 0) {
+        const std::string path = name.substr(12);
+        const std::string ext = std::filesystem::path(path).extension().string();
+        anim_.format = ext == ".gif" ? AnimFormat::Gif : ext == ".mp4" ? AnimFormat::Mp4 : AnimFormat::PngFrames;
+        startAnimationExport(path);
+    }
     else return false;
     return true;
 }
 
 bool App::scriptIdle() const {
-    if (!fullRenderShown()) return false;
+    if (!fullRenderShown() || anim_.lastProgress.running) return false;
     if (grid_.open)
         for (int s : grid_.state)
             if (s == 0) return false;
@@ -535,7 +599,7 @@ void App::acceptResult(RenderResult r) {
     if (!shown_.proxy && !exportPath_.empty() && scheduler_.fullIsCurrent()) finishExport();
 }
 
-glic::Image App::croppedShown() const { return crop(shown_.image, shown_.encodedWidth, shown_.encodedHeight); }
+glic::Image App::croppedShown() const { return cropTo(shown_.image, shown_.encodedWidth, shown_.encodedHeight); }
 
 void App::requestExport() {
     if (!source_) {
@@ -604,6 +668,7 @@ int App::idleTimeoutMs() {
     if (loading_.valid()) return 30;
     const double wake = scheduler_.wakeIn(nowMs());
     if (wake >= 0) return std::max(1, static_cast<int>(std::ceil(wake)));
+    if (anim_.lastProgress.running) return 100;  // export progress
     if (ImGui::GetIO().WantTextInput) return 500;  // caret blink
     return -1;
 }
@@ -726,6 +791,11 @@ void App::statusBar(float height) {
         }
         std::snprintf(buf, sizeof buf, "  \xC2\xB7  seed %lld  \xC2\xB7  ", static_cast<long long>(settings_.seed));
         text += buf;
+        if (anim_.lastProgress.running) {
+            std::snprintf(buf, sizeof buf, "%s %d/%d  \xC2\xB7  ", anim_.lastProgress.encoding ? "encoding video" : "exporting",
+                          anim_.lastProgress.framesDone, anim_.lastProgress.frames);
+            text += buf;
+        }
         if (!scheduler_.idle()) text += "rendering...";
         else text += shown_.valid ? (shown_.proxy ? "proxy" : "full") : "-";
     } else {
@@ -787,6 +857,7 @@ void App::frame() {
     }
     pumpRender();
     pumpBatch();
+    pumpAnimation();
 
     for (Action a : pressedActions()) runAction(static_cast<int>(a));
     const bool holdOriginal = ImGui::IsKeyDown(kHoldOriginalKey) && !ImGui::GetIO().WantTextInput;

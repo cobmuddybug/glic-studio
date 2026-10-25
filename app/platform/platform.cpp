@@ -113,6 +113,14 @@ void Platform::showSavePngDialog(const std::string& suggestedName) {
                            suggestedName.empty() ? nullptr : suggestedName.c_str());
 }
 
+void Platform::showSaveAnimationDialog(const std::string& suggestedName, bool gif, bool folder) {
+    static const SDL_DialogFileFilter mp4[] = {{"MP4 video", "mp4"}};
+    static const SDL_DialogFileFilter gifs[] = {{"GIF animation", "gif"}};
+    auto* ctx = new DialogContext{this, AppEventKind::SaveAnimation};
+    if (folder) SDL_ShowOpenFolderDialog(dialogCallback, ctx, window_, nullptr, false);
+    else SDL_ShowSaveFileDialog(dialogCallback, ctx, window_, gif ? gifs : mp4, 1, suggestedName.empty() ? nullptr : suggestedName.c_str());
+}
+
 void Platform::showSavePresetDialog(const std::string& suggestedName) {
     SDL_ShowSaveFileDialog(dialogCallback, new DialogContext{this, AppEventKind::SavePreset}, window_, kPresetFilter, 1,
                            suggestedName.empty() ? nullptr : suggestedName.c_str());

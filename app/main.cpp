@@ -45,10 +45,10 @@ void usage() {
         "  --spec \"k=v ...\"   initial encode settings (same keys as `glic encode --spec`)\n"
         "  --decode \"k=v ...\" unlink decoding and set these decode-side values\n"
         "  --view MODE        glitched | original | split | difference\n"
-        "  --tab NAME         settings tab to show: encode | decode | corrupt\n"
+        "  --tab NAME         settings tab to show: encode | decode | corrupt | animate\n"
         "  --overlays LIST    show codec overlays: blocks,predictors,coefficients[,ch=1|2|3]\n"
         "  --actions LIST     run actions in order once each render settles (for tests):\n"
-        "                     randomize, undo, redo, mutate, adopt:N\n"
+        "                     randomize, undo, redo, mutate, adopt:N, export-anim:PATH\n"
         "  --size WxH         initial window size in points\n"
         "  --capture OUT.png  screenshot the window once a full render is on screen, then exit\n"
         "  --export OUT.png   export the full render (preset embedded) once it is on screen, then exit");
@@ -196,6 +196,7 @@ int main(int argc, char** argv) {
         }
         if (opt.tab == "decode") app.selectTab("Decode");
         else if (opt.tab == "corrupt") app.selectTab("Corrupt");
+        else if (opt.tab == "animate") app.selectTab("Animate");
         if (!opt.overlays.empty()) {
             studio::OverlaySettings& ov = app.overlays();
             ov.panel = true;

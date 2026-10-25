@@ -19,5 +19,6 @@ run coefficients --open "$root/tests/images/photo.png" --spec "wavelet=46 scale=
 run corrupt --open "$root/tests/images/photo.png" --preset "$root/presets/examples/corrupt-band.json" --tab corrupt
 run mutate --open "$root/tests/images/photo.png" --actions randomize,randomize,undo,randomize,mutate
 run history --open "$root/tests/images/photo.png" --actions randomize,randomize,undo,randomize,mutate,adopt:5,mutate
+run animate --open "$root/tests/images/photo.png" --spec "wavelet=67 pred=9" --tab animate
 run tiny --open "$root/tests/images/tiny.png" --spec "pred=14 quant=40"
 echo "screenshots in $out"

@@ -493,3 +493,27 @@ Per §11, where the code disagreed with the plan, the code won:
 - **ASan on the GUI** (`-DGLIC_SANITIZE=ON`): clean apart from one 128-byte leak report. It
   comes from a one-time `pthread_once` allocation inside the dlopen'd GL driver, and shows up
   even when the app just opens an image.
+
+### Recorded during M7
+
+- **Animate tab** (a tab rather than a new panel, per §11). Animatable: quantization,
+  threshold, compression, scale, min/max block (as exponents), prediction and wavelet ids,
+  colour space, the encode seed, and the corruption seed and rate. Per-channel targets take
+  one channel or all three. Decode-side values (quantization, scale, prediction, wavelet,
+  colour space) can be animated when decoding is unlinked, which makes mismatches into
+  animations. Easing is linear, ease-in, ease-out or ease-in-out (cubic). Integer targets
+  are rounded per frame.
+- **Each frame is an ordinary preset** (`model/animation.*`: `framePreset`). Every exported PNG
+  embeds its own frame's preset, so `glic render IMG OUT --preset frame_0015.png` reproduces
+  that frame byte for byte (checked).
+- **Export** (`render/animation_export.*`) renders frames in parallel (up to 6 threads) at full
+  size or a chosen longest edge. MP4/GIF frames go to a temporary directory, then ffmpeg runs
+  without a shell (fork/exec, argv only): H.264 yuv420p padded to even sides, or a two-pass
+  palette GIF. If ffmpeg fails, the frames are kept and the status bar names the folder and
+  ffmpeg's last error line. Cancel stops the frame threads and terminates ffmpeg.
+- **No ffmpeg on PATH**: MP4/GIF are disabled, the format falls back to PNG frames, and the tab
+  says why (§M7).
+- **Preview**: a frame slider renders that frame at 256 px on its own thread. It never touches
+  the current settings or history.
+- **Test hook**: `--actions export-anim:PATH` exports with the tab's settings (.mp4, .gif, or a
+  folder for PNG frames), and the capture waits for it to finish.
