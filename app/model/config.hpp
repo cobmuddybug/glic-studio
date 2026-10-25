@@ -21,6 +21,7 @@ struct StudioConfig {
     int windowWidth = 0, windowHeight = 0;         // points; 0 = default
     int proxyEdge = 512;
     bool autoArrange = true;
+    bool restoreLastPreset = false;               // start with the last session's settings
     nlohmann::json document = nlohmann::json::object();
 };
 

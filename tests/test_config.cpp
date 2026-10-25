@@ -21,6 +21,7 @@ TEST_CASE("config: defaults, round trip, unknown fields, recent list") {
     CHECK(c.recentFiles.empty());
     CHECK_FALSE(c.lastPreset);
     CHECK(c.proxyEdge == 512);
+    CHECK_FALSE(c.restoreLastPreset);
 
     for (int i = 0; i < 14; i++) studio::addRecent(c, "/img/" + std::to_string(i) + ".png");
     studio::addRecent(c, "/img/5.png");  // moves to the front, no duplicate
@@ -36,6 +37,7 @@ TEST_CASE("config: defaults, round trip, unknown fields, recent list") {
     c.windowHeight = 700;
     c.proxyEdge = 768;
     c.autoArrange = false;
+    c.restoreLastPreset = true;
     c.document["from_the_future"] = 42;
     REQUIRE(studio::saveConfig(path, c));  // creates the directory
 
@@ -47,6 +49,7 @@ TEST_CASE("config: defaults, round trip, unknown fields, recent list") {
     CHECK(back.windowWidth == 1000);
     CHECK(back.proxyEdge == 768);
     CHECK_FALSE(back.autoArrange);
+    CHECK(back.restoreLastPreset);
     REQUIRE(studio::saveConfig(path, back));
     CHECK(studio::loadConfig(path).document.value("from_the_future", 0) == 42);
 

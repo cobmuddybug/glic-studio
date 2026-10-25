@@ -521,7 +521,7 @@ Per §11, where the code disagreed with the plan, the code won:
 ### Recorded during M8
 
 - **Persistence** (`app/model/config.*`): `config.json` holds recent files (10), the last preset
-  (in the preset format), the window size, the proxy size and "rearrange for window shape".
+  (in the preset format), the window size, the proxy size, "rearrange for window shape" and whether to start from the last preset (off by default).
   ImGui's `layout.ini` sits next to it, and a saved dock layout is reused instead of the
   default being rebuilt. The directory is `$GLIC_STUDIO_CONFIG_DIR`, else
   `$XDG_CONFIG_HOME/glic-studio`, else `~/.config/glic-studio`. A broken file falls back to

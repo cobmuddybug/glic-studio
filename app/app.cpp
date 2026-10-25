@@ -218,6 +218,9 @@ void App::presetsMenu() {
         }
     }
     if (bundled_.empty()) ImGui::TextDisabled("(bundled presets not found)");
+    ImGui::Separator();
+    ImGui::MenuItem("Restore last settings on launch", nullptr, &restoreLastPreset_);
+    ImGui::SetItemTooltip("Off: every launch starts from the default settings");
     ImGui::EndMenu();
 }
 
@@ -466,7 +469,8 @@ void App::useConfig(StudioConfig config, bool restorePreset) {
     config_ = std::move(config);
     proxyEdge_ = config_.proxyEdge;
     autoArrange_ = config_.autoArrange;
-    if (restorePreset && config_.lastPreset) restore(*config_.lastPreset, "open");
+    restoreLastPreset_ = config_.restoreLastPreset;
+    if (restorePreset && restoreLastPreset_ && config_.lastPreset) restore(*config_.lastPreset, "open");
 }
 
 StudioConfig App::config() const {
@@ -474,6 +478,7 @@ StudioConfig App::config() const {
     c.lastPreset = currentPreset();
     c.proxyEdge = proxyEdge_;
     c.autoArrange = autoArrange_;
+    c.restoreLastPreset = restoreLastPreset_;
     return c;
 }
 

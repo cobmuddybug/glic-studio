@@ -261,6 +261,7 @@ private:
     bool layoutBuilt_ = false;
     bool layoutNarrow_ = false;
     bool autoArrange_ = true;
+    bool restoreLastPreset_ = false;
     int framesToRender_ = 3;
     bool quit_ = false;
     std::string selectTab_;

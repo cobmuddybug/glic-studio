@@ -44,6 +44,7 @@ StudioConfig loadConfig(const std::string& path, std::string* error) {
         }
         c.proxyEdge = std::clamp(doc.value("proxy_edge", c.proxyEdge), 128, 2048);
         c.autoArrange = doc.value("auto_arrange", c.autoArrange);
+        c.restoreLastPreset = doc.value("restore_last_preset", c.restoreLastPreset);
     } catch (const json::exception& e) {
         if (error) *error = std::string("config: ") + e.what();
         StudioConfig fresh;
@@ -61,6 +62,7 @@ bool saveConfig(const std::string& path, const StudioConfig& c) {
     doc["window"] = {{"width", c.windowWidth}, {"height", c.windowHeight}};
     doc["proxy_edge"] = c.proxyEdge;
     doc["auto_arrange"] = c.autoArrange;
+    doc["restore_last_preset"] = c.restoreLastPreset;
 
     std::error_code ec;
     fs::create_directories(fs::path(path).parent_path(), ec);
