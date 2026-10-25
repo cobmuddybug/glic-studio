@@ -2,6 +2,7 @@
 add_library(studio_core STATIC
     model/preview_scheduler.cpp
     model/params.cpp
+    render/overlay.cpp
     render/resize.cpp
     render/worker.cpp
 )
@@ -45,6 +46,7 @@ add_executable(glic-studio
     platform/platform.cpp
     render/texture.cpp
     ui/canvas.cpp
+    ui/overlay_panel.cpp
     ui/settings_panel.cpp
     ui/keybindings.cpp
 )

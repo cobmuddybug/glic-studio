@@ -403,3 +403,25 @@ Per §11, where the code disagreed with the plan, the code won:
   (via the harness's `presets` command), following GLIC's `readValues()`.
 - **GUI flags**: `--preset FILE` and `--export OUT.png` (export once the full render is shown,
   then exit) are used by the parity check.
+
+### Recorded during M4
+
+- **Source of overlay data**: captured from the *decode*, not the encode. The overlays then show
+  what is on screen: a mismatched decode shows the decoder's predictors, decode-only changes
+  (which reuse the cached encode) still get fresh data, and corrupted values (M5) will appear
+  in the coefficient view. The render worker asks libglic for a `Capture` only when an overlay
+  needs it. Turning one on re-renders, decode only.
+- **`O` is the master switch**: it opens the overlays panel (floating in the canvas's top-right
+  corner) and shows the overlays together. Nothing is drawn or captured while it is closed.
+  Inside it: channel (named for the decoded colour space), Blocks, Predictors (with opacity),
+  Coefficients, legends, and a readout of the pixel, block, predictor and value under the
+  cursor. Overlays draw over every view mode and are hidden while Space shows the original.
+- **Blocks** are drawn in screen space (one-pixel lines at any zoom), coloured by quadtree depth.
+  Blocks under 4 px on screen are skipped, and the panel says how many. **Predictors** is a
+  heatmap texture at the decoded resolution, with a legend of the methods present and their
+  share of the image area. **Coefficients** shows the decoded values as grey, log(1+|v|)
+  scaled to the largest magnitude. With a wavelet these are per-block bands (LL at the top
+  left); without one they are prediction residuals, and the panel says so.
+- Rasterising and legend logic live in `app/render/overlay.*` (unit-tested). `--overlays
+  blocks,predictors,coefficients[,ch=N]` opens the panel at start for `--capture` screenshots,
+  and `tools/gui_smoke.sh` uses it.

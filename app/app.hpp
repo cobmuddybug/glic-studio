@@ -1,6 +1,7 @@
 #pragma once
 
 #include "model/preview_scheduler.hpp"
+#include "render/overlay.hpp"
 #include "platform/platform.hpp"
 #include "render/texture.hpp"
 #include "render/worker.hpp"
@@ -38,6 +39,7 @@ struct ShownRender {
     bool encodeReused = false;
     glic::Image image;                         // decoded (GLIC pads sides below 64)
     std::shared_ptr<const glic::GlicData> data;
+    std::shared_ptr<const glic::Capture> capture;  // overlay data, if it was asked for
 };
 
 class App {
@@ -84,6 +86,15 @@ public:
     // The decode-side values the encoder writes for the current settings.
     glic::EncodeSettings headerSettings() const;
 
+    // Overlays (design §M4). Call overlaysChanged() after editing them.
+    OverlaySettings& overlays() { return overlays_; }
+    void overlaysChanged();
+    const ShownRender& shown() const { return shown_; }
+    // The colour space the shown image was decoded with (for channel names).
+    glic::ColorSpace decodedColorSpace() const;
+    int64_t coefficientPeak() const { return coefficientPeak_; }
+    const std::array<double, glic::kPredictionCount>& predictorShares() const { return predictorShares_; }
+
     // Select a settings tab on the next frame ("Encode", "Decode").
     void selectTab(std::string tab) { selectTab_ = std::move(tab); }
     std::string takeTabSelection() { return std::exchange(selectTab_, {}); }
@@ -101,6 +112,7 @@ private:
     void presetsMenu();
     void embeddedPresetBar();
     void copyToClipboard();
+    void refreshOverlayTextures();
     glic::Image croppedShown() const;
     double nowMs() const;
 
@@ -124,6 +136,12 @@ private:
     Texture originalTex_, glitchedTex_, diffTex_;
     bool diffDirty_ = true;
     CanvasView view_;
+
+    OverlaySettings overlays_;
+    Texture heatmapTex_, coefficientTex_;
+    bool overlayDirty_ = true;
+    int64_t coefficientPeak_ = 0;
+    std::array<double, glic::kPredictionCount> predictorShares_{};
 
     std::string exportPath_;  // set while an export waits for its full render
 

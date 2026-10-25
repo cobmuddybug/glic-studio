@@ -195,3 +195,85 @@ TEST_CASE("worker reuses the encoded data when only decode settings change") {
     REQUIRE(third.ok);
     CHECK_FALSE(third.encodeReused);
 }
+
+#include "render/overlay.hpp"
+
+TEST_CASE("overlay: depth, palettes, heatmap, shares, coefficients") {
+    CHECK(studio::blockDepth(256, 256) == 0);
+    CHECK(studio::blockDepth(256, 32) == 3);
+    CHECK(studio::blockDepth(512, 2) == 8);
+    CHECK(studio::depthColor(99) == studio::depthColor(studio::kMaxDepthColors - 1));
+    CHECK(studio::predictorColor(-3) == 0xFFFFFFFFu);
+    for (int a = 0; a < glic::kPredictionCount; a++)
+        for (int b = a + 1; b < glic::kPredictionCount; b++) CHECK(studio::predictorColor(a) != studio::predictorColor(b));
+
+    // A 6x4 image whose 8x8 root has four 4x4 blocks; two hang off the right edge.
+    glic::Capture c;
+    c.width = 6;
+    c.height = 4;
+    c.rootSize = 8;
+    c.blocks[1] = {{0, 0, 4, 2}, {4, 0, 4, 9}, {0, 4, 4, 9}, {4, 4, 4, 9}};
+    auto heat = studio::predictorHeatmap(c, 1, 1.0f);
+    REQUIRE(heat.width == 6);
+    CHECK(heat.pixels[0] == studio::predictorColor(2));
+    CHECK(heat.pixels[5] == studio::predictorColor(9));
+    CHECK((studio::predictorHeatmap(c, 1, 0.5f).pixels[0] >> 24) == 128);
+    CHECK(studio::predictorHeatmap(c, 0, 1.0f).empty());
+    auto share = studio::predictorShares(c, 1);
+    CHECK(share[2] == doctest::Approx(16.0 / 24));  // clipped to the image
+    CHECK(share[9] == doctest::Approx(8.0 / 24));
+
+    c.planeValues[0] = {0, 1, -1000, 1000, 5, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int64_t peak = 0;
+    auto coef = studio::coefficientImage(c, 0, &peak);
+    CHECK(peak == 1000);
+    CHECK(coef.pixels[0] == glic::makeColor(0, 0, 0));
+    CHECK(coef.pixels[2] == glic::makeColor(255, 255, 255));
+    CHECK(coef.pixels[3] == coef.pixels[2]);  // magnitude: the sign does not matter
+    CHECK(glic::getR(coef.pixels[1]) > 0);
+    CHECK(glic::getR(coef.pixels[1]) < glic::getR(coef.pixels[4]));
+    CHECK(studio::coefficientImage(c, 2).empty());  // nothing captured
+}
+
+TEST_CASE("worker captures overlay data from the decode only when asked") {
+    auto img = glic::loadImage(std::string(GLIC_SOURCE_DIR) + "/tests/images/small64.png");
+    REQUIRE(img);
+    auto source = std::make_shared<const glic::Image>(*img);
+    studio::RenderWorker worker;
+    auto waitOne = [&] {
+        for (int i = 0; i < 2000; i++) {
+            auto r = worker.poll();
+            if (!r.empty()) return r.back();
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        }
+        return studio::RenderResult{};
+    };
+
+    studio::RenderRequest req;
+    req.generation = 1;
+    req.source = source;
+    for (auto& ch : req.encode.channels) ch.wavelet = 67;
+    worker.submit(req);
+    auto plain = waitOne();
+    REQUIRE(plain.ok);
+    CHECK_FALSE(plain.capture);
+
+    // Mismatched decode, encode reused: the capture shows the decoder's predictor.
+    req.generation = 2;
+    req.captureSegments = req.captureValues = true;
+    auto params = glic::decodeParamsFor(req.encode);
+    params.channels[0].prediction = static_cast<int>(glic::Prediction::DC);
+    req.decode.override = params;
+    worker.submit(req);
+    auto cap = waitOne();
+    REQUIRE(cap.ok);
+    CHECK(cap.encodeReused);
+    REQUIRE(cap.capture);
+    CHECK(cap.capture->width == cap.image.width);
+    CHECK_FALSE(cap.capture->blocks[0].empty());
+    for (const auto& b : cap.capture->blocks[0]) CHECK(b.method == static_cast<int>(glic::Prediction::DC));
+    CHECK(cap.capture->blocks[1].front().method == static_cast<int>(glic::Prediction::AVG));
+    CHECK(cap.capture->planeValues[2].size() == static_cast<size_t>(cap.image.width) * cap.image.height);
+    // Capturing never changes the picture.
+    CHECK(cap.image.pixels == glic::decode(*cap.data, req.decode).image.pixels);
+}

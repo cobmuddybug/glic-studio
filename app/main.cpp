@@ -31,6 +31,7 @@ struct Options {
     std::string capture;  // write a screenshot once a full render is shown, then exit
     std::string preset;
     std::string exportPng;  // export the full render (with preset) once shown, then exit
+    std::string overlays;   // open the overlays panel with these on, e.g. "blocks,predictors,ch=2"
     int width = 0, height = 0;
 };
 
@@ -43,6 +44,7 @@ void usage() {
         "  --decode \"k=v ...\" unlink decoding and set these decode-side values\n"
         "  --view MODE        glitched | original | split | difference\n"
         "  --tab NAME         settings tab to show: encode | decode\n"
+        "  --overlays LIST    show codec overlays: blocks,predictors,coefficients[,ch=1|2|3]\n"
         "  --size WxH         initial window size in points\n"
         "  --capture OUT.png  screenshot the window once a full render is on screen, then exit\n"
         "  --export OUT.png   export the full render (preset embedded) once it is on screen, then exit");
@@ -65,6 +67,7 @@ bool parse(int argc, char** argv, Options& o) {
         else if (a == "--capture") { if (!next(o.capture)) return false; }
         else if (a == "--preset") { if (!next(o.preset)) return false; }
         else if (a == "--export") { if (!next(o.exportPng)) return false; }
+        else if (a == "--overlays") { if (!next(o.overlays)) return false; }
         else if (a == "--size") {
             if (!next(v) || std::sscanf(v.c_str(), "%dx%d", &o.width, &o.height) != 2) return false;
         } else if (a == "-h" || a == "--help") { return false; }
@@ -182,6 +185,24 @@ int main(int argc, char** argv) {
             app.settingsChanged();
         }
         if (opt.tab == "decode") app.selectTab("Decode");
+        if (!opt.overlays.empty()) {
+            studio::OverlaySettings& ov = app.overlays();
+            ov.panel = true;
+            ov.blocks = false;
+            std::string list = opt.overlays + ",";
+            for (size_t at = 0, comma; (comma = list.find(',', at)) != std::string::npos; at = comma + 1) {
+                const std::string item = list.substr(at, comma - at);
+                if (item == "blocks") ov.blocks = true;
+                else if (item == "predictors") ov.predictors = true;
+                else if (item == "coefficients") ov.coefficients = true;
+                else if (item.size() == 4 && item.rfind("ch=", 0) == 0 && item[3] >= '1' && item[3] <= '3') ov.channel = item[3] - '1';
+                else {
+                    std::fprintf(stderr, "--overlays: unknown item \"%s\"\n", item.c_str());
+                    return 1;
+                }
+            }
+            app.overlaysChanged();
+        }
         if (opt.view == "original") app.view().mode = studio::ViewMode::Original;
         else if (opt.view == "split") app.view().mode = studio::ViewMode::Split;
         else if (opt.view == "difference") app.view().mode = studio::ViewMode::Difference;

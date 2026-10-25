@@ -4,6 +4,7 @@
 #include "spec.hpp"
 #include "render/resize.hpp"
 #include "ui/canvas.hpp"
+#include "ui/overlay_panel.hpp"
 #include "ui/keybindings.hpp"
 #include "ui/settings_panel.hpp"
 
@@ -286,6 +287,38 @@ void App::setDecodeLinked(bool linked) {
     settingsChanged();
 }
 
+void App::overlaysChanged() {
+    overlayDirty_ = true;
+    framesToRender_ = std::max(framesToRender_, 2);
+    // Data is only captured while an overlay needs it: render again (decode
+    // only, the encode is cached) if the shown render lacks it.
+    const glic::Capture* c = shown_.capture.get();
+    const bool missing = (overlays_.needsSegments() && !(c && c->segments)) ||
+                         (overlays_.needsValues() && !(c && c->values));
+    if (missing) settingsChanged();
+}
+
+glic::ColorSpace App::decodedColorSpace() const {
+    if (shown_.data) return static_cast<glic::ColorSpace>(shown_.data->layout().params.colorSpace);
+    return settings_.colorSpace;
+}
+
+void App::refreshOverlayTextures() {
+    if (!overlayDirty_) return;
+    overlayDirty_ = false;
+    const glic::Capture* c = shown_.capture.get();
+    const int ch = overlays_.channel;
+    if (c && overlays_.needsSegments() && c->segments) predictorShares_ = studio::predictorShares(*c, ch);
+    if (c && overlays_.panel && overlays_.predictors && c->segments)
+        heatmapTex_.upload(predictorHeatmap(*c, ch, overlays_.heatmapOpacity));
+    else
+        heatmapTex_.clear();
+    if (c && overlays_.needsValues() && c->values)
+        coefficientTex_.upload(coefficientImage(*c, ch, &coefficientPeak_));
+    else
+        coefficientTex_.clear();
+}
+
 void App::pumpRender() {
     for (auto& r : worker_.poll()) {
         const bool show = scheduler_.finished(r.generation, r.cancelled);
@@ -306,6 +339,8 @@ void App::pumpRender() {
         req.decode = glic::preset::decodeSettings(currentPreset());
         req.proxy = job->proxy;
         req.proxyEdge = proxyEdge_;
+        req.captureSegments = overlays_.needsSegments();
+        req.captureValues = overlays_.needsValues();
         worker_.submit(std::move(req));
     }
 }
@@ -320,8 +355,10 @@ void App::acceptResult(RenderResult r) {
     shown_.encodeReused = r.encodeReused;
     shown_.image = std::move(r.image);
     shown_.data = std::move(r.data);
+    shown_.capture = std::move(r.capture);
     glitchedTex_.upload(shown_.image);
     diffDirty_ = true;
+    overlayDirty_ = true;
     if (statusError_) setStatus("");
     if (!shown_.proxy && !exportPath_.empty() && scheduler_.fullIsCurrent()) finishExport();
 }
@@ -372,6 +409,10 @@ void App::runAction(int a) {
     case Action::ZoomFit: view_.fit = true; break;
     case Action::Zoom100: zoomTo100(view_, fb); break;
     case Action::ToggleDecodeLink: setDecodeLinked(!decodeLinked_); break;
+    case Action::ToggleOverlays:
+        overlays_.panel = !overlays_.panel;
+        overlaysChanged();
+        break;
     case Action::SavePreset: {
         std::string stem = presetName_.empty() ? std::filesystem::path(sourcePath_).stem().string() : presetName_;
         platform_.showSavePresetDialog((stem.empty() ? "preset" : stem) + ".json");
@@ -436,6 +477,9 @@ void App::menuBar() {
         if (ImGui::MenuItem("Zoom 100%", shortcutLabel(Action::Zoom100))) runAction(static_cast<int>(Action::Zoom100));
         if (ImGui::MenuItem("Zoom in", shortcutLabel(Action::ZoomIn))) runAction(static_cast<int>(Action::ZoomIn));
         if (ImGui::MenuItem("Zoom out", shortcutLabel(Action::ZoomOut))) runAction(static_cast<int>(Action::ZoomOut));
+        ImGui::Separator();
+        if (ImGui::MenuItem("Codec overlays", shortcutLabel(Action::ToggleOverlays), overlays_.panel))
+            runAction(static_cast<int>(Action::ToggleOverlays));
         ImGui::Separator();
         if (ImGui::MenuItem("Reset layout")) buildLayout(true);
         ImGui::MenuItem("Rearrange for window shape", nullptr, &autoArrange_);
@@ -580,8 +624,23 @@ void App::frame() {
             ci.glitchedV = static_cast<float>(shown_.encodedHeight) / shown_.image.height;
         }
         ci.framebufferScale = ImGui::GetIO().DisplayFramebufferScale.x;
+        if (overlays_.panel && shown_.valid) {
+            refreshOverlayTextures();
+            ci.heatmap = &heatmapTex_;
+            ci.coefficients = &coefficientTex_;
+            ci.capture = shown_.capture.get();
+            ci.overlayChannel = overlays_.channel;
+            ci.blocks = overlays_.blocks && ci.capture && ci.capture->segments;
+            ci.overlayWidth = shown_.encodedWidth;
+            ci.overlayHeight = shown_.encodedHeight;
+        }
         embeddedPresetBar();
-        drawCanvas(view_, ci, holdOriginal);
+        const ImVec2 canvasPos = ImGui::GetCursorScreenPos();
+        const CanvasOutput co = drawCanvas(view_, ci, holdOriginal);
+        if (overlays_.panel) {
+            ImGui::SetCursorScreenPos(canvasPos);
+            drawOverlayPanel(*this, co);
+        }
     }
     ImGui::End();
     ImGui::PopStyleVar();

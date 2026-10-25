@@ -28,6 +28,9 @@ struct RenderRequest {
     glic::DecodeSettings decode;
     bool proxy = false;   // render a downscaled proxy
     int proxyEdge = 512;  // longest edge of the proxy
+    // Overlay data to capture from the decode (design §M4). Off = no cost.
+    bool captureSegments = false;
+    bool captureValues = false;
 };
 
 struct RenderResult {
@@ -41,6 +44,7 @@ struct RenderResult {
     double encodeMs = 0, decodeMs = 0;
     bool encodeReused = false;  // decode-only change: the cached GlicData was decoded again
     std::shared_ptr<const glic::GlicData> data;
+    std::shared_ptr<const glic::Capture> capture;  // set when the request asked for any
 };
 
 class RenderWorker {

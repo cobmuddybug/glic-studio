@@ -28,6 +28,17 @@ void copyParam(glic::ChannelSettings& dst, const glic::ChannelSettings& src, Cha
 
 } // namespace
 
+const char* channelName(glic::ColorSpace cs, int ch) {
+    static const char* names[16][3] = {
+        {"I1", "I2", "I3"}, {"R", "G", "B"}, {"C", "M", "Y"}, {"H", "S", "B"},
+        {"X", "Y", "Z"}, {"Y", "x", "y"}, {"H", "C", "L"}, {"L", "u", "v"},
+        {"L", "a", "b"}, {"H", "W", "B"}, {"R-G", "G", "B-G"}, {"Y", "Pb", "Pr"},
+        {"Y", "Cb", "Cr"}, {"Y", "Db", "Dr"}, {"Grey", "Grey", "Grey"}, {"Y", "U", "V"},
+    };
+    int i = static_cast<int>(cs);
+    return (i >= 0 && i < 16 && ch >= 0 && ch < 3) ? names[i][ch] : "?";
+}
+
 const std::vector<Choice>& predictionChoices() {
     static const auto v = [] {
         std::vector<Choice> out;

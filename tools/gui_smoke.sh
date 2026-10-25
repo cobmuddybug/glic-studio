@@ -14,5 +14,7 @@ run() {
 run glitched --open "$root/tests/images/photo.png" --spec "colorspace=9 pred=-1 wavelet=67 quant=60"
 run split --open "$root/tests/images/photo.png" --spec "wavelet=46 scale=4096" --view split
 run difference --open "$root/tests/images/gradient.png" --spec "pred=9,15,-3 wavelet=67,0,46 quant=30,60,0" --view difference
+run overlays --open "$root/tests/images/photo.png" --spec "pred=-1 wavelet=67 quant=40" --overlays blocks,predictors
+run coefficients --open "$root/tests/images/photo.png" --spec "wavelet=46 scale=4096" --overlays coefficients,blocks,ch=2
 run tiny --open "$root/tests/images/tiny.png" --spec "pred=14 quant=40"
 echo "screenshots in $out"

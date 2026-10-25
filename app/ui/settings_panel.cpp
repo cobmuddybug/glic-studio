@@ -13,18 +13,6 @@ namespace studio {
 
 namespace {
 
-// Channel names per colour space, for the column headers.
-const char* channelName(glic::ColorSpace cs, int ch) {
-    static const char* names[16][3] = {
-        {"I1", "I2", "I3"}, {"R", "G", "B"}, {"C", "M", "Y"}, {"H", "S", "B"},
-        {"X", "Y", "Z"}, {"Y", "x", "y"}, {"H", "C", "L"}, {"L", "u", "v"},
-        {"L", "a", "b"}, {"H", "W", "B"}, {"R-G", "G", "B-G"}, {"Y", "Pb", "Pr"},
-        {"Y", "Cb", "Cr"}, {"Y", "Db", "Dr"}, {"Grey", "Grey", "Grey"}, {"Y", "U", "V"},
-    };
-    int i = static_cast<int>(cs);
-    return (i >= 0 && i < 16) ? names[i][ch] : "?";
-}
-
 bool choiceCombo(const char* id, int& value, const std::vector<Choice>& choices) {
     const char* preview = "?";
     for (const auto& c : choices)

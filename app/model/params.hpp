@@ -20,6 +20,9 @@ struct Choice {
     std::string label;
 };
 
+// Component names per colour space ("R", "Cb", ...), for column headers.
+const char* channelName(glic::ColorSpace cs, int ch);
+
 // GLIC's GUI list order: concrete predictors 0..15, then SAD, BSAD, RANDOM.
 const std::vector<Choice>& predictionChoices();
 // Decode side: only concrete predictors (GLIC's skip-header decode turns meta ones into NONE).

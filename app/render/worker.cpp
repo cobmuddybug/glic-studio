@@ -96,8 +96,18 @@ void RenderWorker::run() {
                 }
             }
             if (data) {
+                // Overlays come from the decode, so they show what is on screen
+                // (mismatched predictors, corrupted values) and survive encode reuse.
+                std::shared_ptr<glic::Capture> capture;
+                glic::Hooks decodeHooks = hooks;
+                if (req.captureSegments || req.captureValues) {
+                    capture = std::make_shared<glic::Capture>();
+                    capture->segments = req.captureSegments;
+                    capture->values = req.captureValues;
+                    decodeHooks.capture = capture.get();
+                }
                 auto t1 = std::chrono::steady_clock::now();
-                auto dec = glic::decode(*data, req.decode, &hooks);
+                auto dec = glic::decode(*data, req.decode, &decodeHooks);
                 res.decodeMs = msSince(t1);
                 if (dec.cancelled) {
                     cancelled = true;
@@ -107,6 +117,7 @@ void RenderWorker::run() {
                     res.ok = true;
                     res.image = std::move(dec.image);
                     res.data = std::move(data);
+                    res.capture = std::move(capture);
                 }
             }
         }
